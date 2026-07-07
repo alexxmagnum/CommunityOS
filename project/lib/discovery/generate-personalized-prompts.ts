@@ -2,6 +2,7 @@ import type { UserDiscoveryContext } from './types'
 import { DEMO_TOURNAMENT_ID } from '@/lib/tournaments/demo-tournament'
 import type { DiscoveryPrompt, TenantEvent, TenantFacility } from '@/lib/org/types'
 import { generateDiscoveryPrompts } from './generate-prompts'
+import { scoreEventRecommendations } from './score-recommendations'
 
 function hourBucket() {
   const h = new Date().getHours()
@@ -83,6 +84,17 @@ export function generatePersonalizedPrompts(
         image_url: tournament.cover_image_url,
       })
     }
+  }
+
+  for (const { event, reason } of scoreEventRecommendations(events, context)) {
+    extra.push({
+      id: `ml-${event.id}`,
+      message: event.title,
+      subtext: reason,
+      href: `events/${event.id}`,
+      urgency: event.available_spots != null && event.available_spots <= 3 ? 'high' : 'medium',
+      image_url: event.cover_image_url,
+    })
   }
 
   const merged = [...extra, ...base]

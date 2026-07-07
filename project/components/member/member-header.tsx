@@ -7,6 +7,7 @@ import type { TenantOrg } from '@/lib/org/types'
 import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationBell } from '@/components/member/notification-bell'
+import { LocaleSwitcher } from '@/components/member/locale-switcher'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -132,6 +133,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
         </nav>
 
         <div className="hidden items-center gap-1.5 lg:flex">
+          <LocaleSwitcher className="mr-2" />
           {!loading && user && <NotificationBell darkNav={darkNav} />}
           {!loading && user ? (
             <>

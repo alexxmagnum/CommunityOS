@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { MemberHeader } from '@/components/member/member-header'
 import { RegistrationQr } from '@/components/events/registration-qr'
+import { PayButton } from '@/components/payments/pay-button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { labelEventType } from '@/lib/i18n/es'
@@ -196,6 +197,27 @@ export default function TenantEventDetailPage() {
               {registering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Unirme a lista de espera
             </Button>
+          ) : event.price > 0 && user ? (
+            <PayButton
+              input={{
+                organizationId: org.id,
+                userId: user.id,
+                kind: 'event_registration',
+                referenceId: event.id,
+                demoMode,
+                items: [
+                  {
+                    label: event.title,
+                    amountCents: Math.round(event.price * 100),
+                    currency: org.currency ?? 'EUR',
+                  },
+                ],
+                successPath: path(`/events/${id}`),
+                cancelPath: path(`/events/${id}`),
+              }}
+              onPaid={handleRegister}
+              disabled={registering}
+            />
           ) : (
             <Button variant="ghost" disabled={registering} className="btn-motanos" onClick={handleRegister}>
               {registering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

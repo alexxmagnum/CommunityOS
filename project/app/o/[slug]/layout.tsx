@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { loadTenantHome } from '@/lib/org/load-tenant-home'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { OrgThemeProvider } from '@/components/member/org-theme-provider'
+import { LocaleProvider } from '@/contexts/LocaleContext'
 import { IkonSplash } from '@/components/member/ikon-splash'
 import type { TenantHomeData } from '@/lib/org/types'
 
@@ -28,10 +29,12 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
 
   return (
     <TenantProvider slug={slug} data={data}>
-      <OrgThemeProvider org={data.org}>
-        {slug === 'ikon' && <IkonSplash />}
-        {children}
-      </OrgThemeProvider>
+      <LocaleProvider defaultLocale={data.org.locale}>
+        <OrgThemeProvider org={data.org}>
+          {slug === 'ikon' && <IkonSplash />}
+          {children}
+        </OrgThemeProvider>
+      </LocaleProvider>
     </TenantProvider>
   )
 }

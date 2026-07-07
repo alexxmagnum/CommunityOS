@@ -24,6 +24,7 @@ import {
   Flag,
   FileText,
   CreditCard,
+  Plug,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ const navigation = [
   { name: 'Marca', href: '/dashboard/branding', icon: Palette },
   { name: 'Legal', href: '/dashboard/legal', icon: FileText },
   { name: 'Facturación', href: '/dashboard/billing', icon: CreditCard },
+  { name: 'Integraciones', href: '/dashboard/integrations', icon: Plug },
   { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
 ]
 

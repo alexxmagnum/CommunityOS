@@ -280,6 +280,16 @@ Items del Master Prompt que pueden ir en paralelo o post-lanzamiento:
 | Más deportes | Reglas configurables por `sport` en admin |
 | Multi-idioma completo | EN, ES, PT mínimo |
 
+### Entregables Fase 4 (código)
+- [x] i18n ES / EN / PT con selector en header del tenant
+- [x] Checkout pagos (demo + API Stripe placeholder) en eventos de pago
+- [x] PWA: manifest + service worker
+- [x] Integraciones admin (Google Calendar, Mailchimp, POS)
+- [x] Reglas de deporte configurables en admin
+- [x] Motor de recomendaciones por scoring (base ML)
+
+**Migración:** `20260710100000_phase4_vision.sql` (tabla `payments`)
+
 ---
 
 ## Dependencias entre fases

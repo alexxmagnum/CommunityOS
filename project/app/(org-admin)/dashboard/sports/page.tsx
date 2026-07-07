@@ -48,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
+import { SportRulesPanel } from '@/components/admin/sport-rules-panel'
 
 interface Sport {
   id: string
@@ -430,6 +431,8 @@ export default function SportsPage() {
           </div>
         )}
       </div>
+
+      <SportRulesPanel />
     </div>
   )
 }

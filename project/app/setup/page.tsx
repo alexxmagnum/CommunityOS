@@ -10,7 +10,7 @@ const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdn
 const STEPS = [
   'Abre el SQL Editor de tu proyecto Supabase.',
   'Si la base está vacía: ejecuta supabase/APPLY_ALL.sql.',
-  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego las migraciones phase1, ikon_branding_assets, phase2 y phase3_saas_scale.',
+  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego phase1 → ikon_branding → phase2 → phase3 → phase4.',
   'Recarga localhost:3000 — prueba /o/ikon y /o/marina (white-label demo).',
 ]
 
