@@ -8,10 +8,11 @@ import { ExternalLink, Database, RefreshCw } from 'lucide-react'
 const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdndzoby/sql/new'
 
 const STEPS = [
-  'Abre el SQL Editor de tu proyecto Supabase.',
-  'Si la base está vacía: ejecuta supabase/APPLY_ALL.sql.',
-  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego phase1 → ikon_branding → phase2 → phase3 → phase4.',
-  'Recarga localhost:3000 — prueba /o/ikon y /o/marina (white-label demo).',
+  'Confirma .env con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY (Settings → API).',
+  'Si la base está vacía (sin tablas): ejecuta supabase/APPLY_ALL.sql en el SQL Editor.',
+  'Luego ejecuta supabase/APPLY_SEED_AND_PHASES.sql (seed IKON + migraciones fase 1–4).',
+  'Si ya tenías esquema pero sin datos: solo APPLY_SEED_AND_PHASES.sql.',
+  'Reinicia npm run dev y abre /o/ikon — ya no debería salir el banner demo.',
 ]
 
 export default function SetupPage() {
@@ -68,9 +69,9 @@ export default function SetupPage() {
         </div>
 
         <p className="text-center text-sm text-white/40">
-          Archivo local: <code className="text-amber-300/80">project/supabase/APPLY_REMAINING.sql</code>
+          <code className="text-amber-300/80">APPLY_ALL.sql</code> (esquema)
           {' · '}
-          Si la base está vacía, usa <code className="text-amber-300/80">APPLY_ALL.sql</code>
+          <code className="text-amber-300/80">APPLY_SEED_AND_PHASES.sql</code> (datos IKON + fases 1–4)
         </p>
       </div>
     </div>
