@@ -15,6 +15,7 @@ const NAV = [
   { segment: '/reservations?sport=golf', label: 'Golf' },
   { segment: '/carta', label: 'Carta' },
   { segment: '/events', label: 'Club' },
+  { segment: '/tournaments', label: 'Torneos' },
   { segment: '/reservations', label: 'Reservar' },
 ]
 

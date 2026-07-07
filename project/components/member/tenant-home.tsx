@@ -1,8 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { generateDiscoveryPrompts } from '@/lib/discovery/generate-prompts'
+import { generatePersonalizedPrompts } from '@/lib/discovery/generate-personalized-prompts'
+import { loadMemberProfile } from '@/lib/community/load-member-profile'
 import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate, formatRelativeTime } from '@/lib/format/dates'
@@ -10,6 +14,7 @@ import { MemberHeader } from '@/components/member/member-header'
 import { IkonHero } from '@/components/member/ikon-hero'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
 import { EmptySection } from '@/components/member/empty-section'
+import { ForYouSection } from '@/components/member/for-you-section'
 import { Calendar, Clock, Flag, MapPin, Users, UtensilsCrossed } from 'lucide-react'
 
 function todayLabel() {
@@ -22,11 +27,29 @@ function todayLabel() {
 
 export function TenantHomePage() {
   const { org, events, facilities, activities, stats, demoMode, path } = useTenant()
+  const { user } = useAuth()
   const isIkon = org.slug === 'ikon'
+  const [forYouPrompts, setForYouPrompts] = useState<ReturnType<typeof generateDiscoveryPrompts>>([])
+
   const prompts = generateDiscoveryPrompts(events, facilities, demoMode).map((p) => ({
     ...p,
     href: path(p.href),
   }))
+
+  useEffect(() => {
+    if (!user) {
+      setForYouPrompts([])
+      return
+    }
+    loadMemberProfile(org.id, user.id, demoMode).then((profile) => {
+      const personalized = generatePersonalizedPrompts(events, facilities, demoMode, {
+        favoriteSports: profile.preferences.favorite_sports,
+        favoriteDishes: profile.preferences.favorite_dishes,
+        recentEventTypes: profile.history.map((h) => h.type === 'tournament' ? 'tournament' : 'event'),
+      }).map((p) => ({ ...p, href: path(p.href) }))
+      setForYouPrompts(personalized)
+    })
+  }, [user, org.id, demoMode, events, facilities, path])
   const featured = events[0]
   const golfFacility = facilities.find((f) => f.sport?.name === 'golf')
 
@@ -73,6 +96,7 @@ export function TenantHomePage() {
       </div>
 
       <main className="mx-auto max-w-7xl space-y-24 px-6 py-20 lg:px-10 lg:py-28">
+        {user && forYouPrompts.length > 0 && <ForYouSection prompts={forYouPrompts} />}
         <DiscoveryFeed prompts={prompts} />
 
         <section>

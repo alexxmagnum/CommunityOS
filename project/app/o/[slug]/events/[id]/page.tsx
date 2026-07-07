@@ -7,10 +7,12 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { MemberHeader } from '@/components/member/member-header'
+import { RegistrationQr } from '@/components/events/registration-qr'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate } from '@/lib/format/dates'
+import { DEMO_TOURNAMENT_ID } from '@/lib/tournaments/demo-tournament'
 import { Check, Clock, Loader2, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -21,6 +23,8 @@ export default function TenantEventDetailPage() {
   const router = useRouter()
   const [event, setEvent] = useState<any>(null)
   const [registered, setRegistered] = useState(false)
+  const [waitlisted, setWaitlisted] = useState(false)
+  const [checkInToken, setCheckInToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [registering, setRegistering] = useState(false)
 
@@ -39,8 +43,13 @@ export default function TenantEventDetailPage() {
 
       if (user && eventData) {
         const { data: reg } = await supabase.from('event_participants')
-          .select('id').eq('event_id', id).eq('user_id', user.id).maybeSingle()
+          .select('id, check_in_token').eq('event_id', id).eq('user_id', user.id).maybeSingle()
         setRegistered(!!reg)
+        setCheckInToken(reg?.check_in_token ?? null)
+
+        const { data: wait } = await supabase.from('event_waitlist')
+          .select('id').eq('event_id', id).eq('user_id', user.id).maybeSingle()
+        setWaitlisted(!!wait)
       }
       setLoading(false)
     }
@@ -49,7 +58,9 @@ export default function TenantEventDetailPage() {
 
   async function handleRegister() {
     if (demoMode) {
-      toast.info('Conecta Supabase para inscripciones reales')
+      setRegistered(true)
+      setCheckInToken('demo-checkin-' + id)
+      toast.success('Inscripción demo confirmada')
       return
     }
     if (!user) {
@@ -60,12 +71,12 @@ export default function TenantEventDetailPage() {
 
     setRegistering(true)
     const supabase = getSupabaseClient()
-    const { error } = await supabase.from('event_participants').insert({
+    const { data, error } = await supabase.from('event_participants').insert({
       organization_id: org.id,
       event_id: event.id,
       user_id: user.id,
       status: 'registered',
-    })
+    }).select('check_in_token').single()
 
     if (error) {
       toast.error(error.message)
@@ -81,7 +92,36 @@ export default function TenantEventDetailPage() {
         is_public: true,
       })
       setRegistered(true)
+      setCheckInToken(data?.check_in_token ?? null)
       toast.success('Inscripción confirmada')
+    }
+    setRegistering(false)
+  }
+
+  async function handleWaitlist() {
+    if (demoMode) {
+      setWaitlisted(true)
+      toast.success('Añadido a lista de espera (demo)')
+      return
+    }
+    if (!user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(path(`/events/${id}`))}`)
+      return
+    }
+    if (!event) return
+
+    setRegistering(true)
+    const supabase = getSupabaseClient()
+    const { error } = await supabase.from('event_waitlist').insert({
+      organization_id: org.id,
+      event_id: event.id,
+      user_id: user.id,
+    })
+
+    if (error) toast.error(error.message)
+    else {
+      setWaitlisted(true)
+      toast.success('Estás en la lista de espera')
     }
     setRegistering(false)
   }
@@ -100,15 +140,14 @@ export default function TenantEventDetailPage() {
         <MemberHeader />
         <div className="mx-auto max-w-3xl px-6 py-20 text-center">
           <p>Experiencia no encontrada</p>
-          <Link href={path('/events')} className="mt-4 inline-block text-sm text-motanos">
-            ← Volver
-          </Link>
+          <Link href={path('/events')} className="mt-4 inline-block text-sm text-motanos">← Volver</Link>
         </div>
       </>
     )
   }
 
   const soldOut = event.available_spots === 0
+  const isTournament = event.type === 'tournament'
 
   return (
     <>
@@ -132,24 +171,38 @@ export default function TenantEventDetailPage() {
           )}
         </div>
 
-        <div className="mt-8 flex items-center gap-4">
+        {isTournament && (
+          <Link href={path(`/tournaments/${demoMode ? DEMO_TOURNAMENT_ID : DEMO_TOURNAMENT_ID}`)} className="mt-4 inline-block text-sm font-medium text-motanos hover:underline">
+            Ver bracket del torneo →
+          </Link>
+        )}
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
           <span className="text-2xl font-semibold text-motanos">
             {event.price > 0 ? `${event.price} €` : 'Incluido'}
           </span>
           {registered ? (
             <Button disabled variant="secondary"><Check className="mr-2 h-4 w-4" /> Inscrito</Button>
-          ) : (
-            <Button
-              variant="ghost"
-              disabled={soldOut || registering}
-              className="btn-motanos"
-              onClick={handleRegister}
-            >
+          ) : waitlisted ? (
+            <Button disabled variant="secondary">En lista de espera</Button>
+          ) : soldOut ? (
+            <Button variant="ghost" className="btn-motanos" disabled={registering} onClick={handleWaitlist}>
               {registering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {soldOut ? 'Agotado' : 'Participar'}
+              Unirme a lista de espera
+            </Button>
+          ) : (
+            <Button variant="ghost" disabled={registering} className="btn-motanos" onClick={handleRegister}>
+              {registering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Participar
             </Button>
           )}
         </div>
+
+        {registered && checkInToken && (
+          <div className="mt-8">
+            <RegistrationQr token={checkInToken} eventTitle={event.title} />
+          </div>
+        )}
       </div>
     </>
   )

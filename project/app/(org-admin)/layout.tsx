@@ -21,6 +21,7 @@ import {
   Settings,
   CalendarCheck,
   ImageIcon,
+  Flag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -38,9 +39,10 @@ const navigation = [
   { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Miembros', href: '/dashboard/members', icon: Users },
   { name: 'Eventos', href: '/dashboard/events', icon: Calendar },
+  { name: 'Torneos', href: '/dashboard/tournaments', icon: Trophy },
   { name: 'Reservas', href: '/dashboard/reservations', icon: CalendarCheck },
   { name: 'Restaurante', href: '/dashboard/restaurant', icon: Utensils },
-  { name: 'Deportes', href: '/dashboard/sports', icon: Trophy },
+  { name: 'Deportes', href: '/dashboard/sports', icon: Flag },
   { name: 'Espacios', href: '/dashboard/venues', icon: MapPin },
   { name: 'Medios', href: '/dashboard/media', icon: ImageIcon },
   { name: 'Marca', href: '/dashboard/branding', icon: Palette },

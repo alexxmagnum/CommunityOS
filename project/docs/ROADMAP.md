@@ -110,9 +110,29 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 
 ---
 
-## Fase 2 — Diferenciación (6–8 semanas)
+## Fase 2 — En progreso (código en `develop`)
 
-**Meta:** Torneos, comunidad y discovery personalizado. El producto deja de parecer "gestor de reservas" y empieza a parecer "club vivo".
+### Completado en código
+- [x] Tournament engine: admin `/dashboard/tournaments`, público `/o/[slug]/tournaments`
+- [x] Bracket UI con datos demo de pádel
+- [x] Rankings en vista de torneo
+- [x] Perfil comunidad: bio, logros, historial (`/o/[slug]/profile`)
+- [x] Discovery personalizado + sección "Para ti" en homepage
+- [x] Eventos: lista de espera + QR check-in
+- [x] Migración SQL `20260708100000_phase2_tournaments_community.sql`
+
+### Pendiente Fase 2
+- [ ] Generación automática de bracket al crear torneo
+- [ ] Admin check-in escáner
+- [ ] Recordatorios de eventos (notificaciones programadas)
+
+**Rama sugerida:** `feature/phase-2-diferenciacion`
+
+---
+
+## Fase 2 — Referencia original
+
+**Meta:** Torneos, comunidad y discovery personalizado.
 
 ### 2.1 Tournament Engine
 

@@ -10,7 +10,7 @@ const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdn
 const STEPS = [
   'Abre el SQL Editor de tu proyecto Supabase.',
   'Si la base está vacía: ejecuta supabase/APPLY_ALL.sql.',
-  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego 20260707100000_phase1_availability_notifications.sql y 20260707120000_ikon_branding_assets.sql.',
+  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego las migraciones phase1, ikon_branding_assets y phase2_tournaments_community.',
   'Recarga localhost:3000 — reservas con horarios, notificaciones e invitaciones.',
 ]
 
