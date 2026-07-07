@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * Selector de idioma — listo pero no montado en UI hasta la pasada final de i18n.
+ * Activar en member-header cuando el copy esté estable.
+ */
 import { LOCALES } from '@/lib/i18n'
 import { useLocale } from '@/contexts/LocaleContext'
 import { cn } from '@/lib/utils'

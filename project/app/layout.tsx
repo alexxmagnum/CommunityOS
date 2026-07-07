@@ -1,13 +1,14 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { DM_Sans, Instrument_Serif, Montserrat } from 'next/font/google'
+import { Plus_Jakarta_Sans, Instrument_Serif, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from '@/components/ui/sonner'
 import { PwaRegister } from '@/components/pwa/pwa-register'
 
-const dmSans = DM_Sans({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-sans',
+  weight: ['200', '300', '400', '500', '600', '700'],
 })
 
 const instrumentSerif = Instrument_Serif({
@@ -39,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${instrumentSerif.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${plusJakarta.variable} ${instrumentSerif.variable} ${montserrat.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
           <PwaRegister />

@@ -222,7 +222,7 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
                       <HeroBackground className="hero-image-mobile" image={HERO_IMAGE_MOBILE} />
                     </div>
 
-                    <p className="hero-subtitle hero-fade hero-fade-3 mt-6 max-w-md text-[19.5px] font-extralight leading-[1.65] text-white/65 lg:mt-10 lg:max-w-lg lg:text-[22.5px] lg:text-white/85">
+                    <p className="hero-subtitle hero-fade hero-fade-3 mt-6 max-w-md font-sans text-[17px] font-extralight leading-[1.75] tracking-[0.03em] text-white/55 lg:mt-10 lg:max-w-lg lg:text-[20px] lg:leading-[1.8] lg:text-white/70">
                       {IKON_BRAND.heroSubtitle}
                     </p>
 

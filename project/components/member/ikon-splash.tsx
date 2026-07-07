@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { IKON_BRAND } from '@/lib/org/ikon-brand'
 import { bindGolfHitAudio, playGolfHitSound, unlockSplashAudio } from '@/lib/splash/golf-hit-sound'
+import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
 
@@ -19,6 +20,14 @@ const GOLF_BALL_MOBILE = '/splash/golf-ball-mobile.jpg?v=2'
 const GOLF_IMPACT_IMAGE = '/splash/golf-ball-impact.png'
 const GOLF_IMPACT_MOBILE = '/splash/golf-ball-impact-mobile.jpg?v=2'
 const MOBILE_MEDIA = '(max-width: 768px), (max-aspect-ratio: 3/4)'
+const SPLASH_SEEN_KEY = 'ikon-splash-seen'
+const MAX_SPLASH_MS = 9000
+
+function shouldSkipSplash() {
+  if (typeof window === 'undefined') return false
+  if (sessionStorage.getItem(SPLASH_SEEN_KEY)) return true
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 function SpreadReveal({
   text,
@@ -81,7 +90,7 @@ export function IkonSplash() {
   const [phase, setPhase] = useState<Phase>('measure')
   const [line2Count, setLine2Count] = useState(0)
   const [line3Count, setLine3Count] = useState(0)
-  const [mounted, setMounted] = useState(true)
+  const [mounted, setMounted] = useState(() => !shouldSkipSplash())
   const [scale, setScale] = useState(1)
   const [imagesReady, setImagesReady] = useState(false)
 
@@ -164,12 +173,23 @@ export function IkonSplash() {
     }
   }, [fitToViewport])
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
+  const finish = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(SPLASH_SEEN_KEY, '1')
     }
+    forceUnlockBodyScroll()
+    setMounted(false)
   }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    lockBodyScroll()
+    const maxTimer = window.setTimeout(() => finish(), MAX_SPLASH_MS)
+    return () => {
+      window.clearTimeout(maxTimer)
+      unlockBodyScroll()
+    }
+  }, [mounted, finish])
 
   useEffect(() => {
     fitToViewport()
@@ -224,9 +244,11 @@ export function IkonSplash() {
     return () => window.clearTimeout(timer)
   }, [phase])
 
-  const finish = useCallback(() => {
-    setMounted(false)
-  }, [])
+  useEffect(() => {
+    if (phase !== 'exit') return
+    const timer = window.setTimeout(() => finish(), 720)
+    return () => window.clearTimeout(timer)
+  }, [phase, finish])
 
   if (!mounted) return null
 
@@ -242,7 +264,10 @@ export function IkonSplash() {
         phase === 'exit' && 'ikon-splash--exit',
       )}
       aria-hidden={phase === 'exit'}
-      onPointerDown={() => unlockSplashAudio()}
+      onPointerDown={() => {
+        unlockSplashAudio()
+        if (phase === 'hold' || phase === 'golf' || phase === 'line3') finish()
+      }}
       onAnimationEnd={(event) => {
         if (phase === 'exit' && event.animationName === 'ikon-splash-fade-out') {
           finish()

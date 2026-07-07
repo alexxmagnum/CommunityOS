@@ -55,7 +55,7 @@ export function OrgThemeProvider({ org, children }: { org: TenantOrg; children: 
     <div
       style={style}
       className={cn(
-        'tenant-theme min-h-screen bg-[var(--org-surface,hsl(var(--background)))] text-[hsl(var(--foreground))]',
+        'tenant-theme min-h-screen font-sans bg-[var(--org-surface,hsl(var(--background)))] text-[hsl(var(--foreground))]',
         isDark && 'dark'
       )}
       data-tenant={org.slug}

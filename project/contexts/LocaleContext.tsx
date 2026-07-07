@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * Provider de idioma — preparado; no montado hasta la pasada final de i18n.
+ * Ver ROADMAP.md § i18n — activar al final.
+ */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   getMessages,

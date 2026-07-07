@@ -281,7 +281,7 @@ Items del Master Prompt que pueden ir en paralelo o post-lanzamiento:
 | Multi-idioma completo | EN, ES, PT mínimo |
 
 ### Entregables Fase 4 (código)
-- [x] i18n ES / EN / PT con selector en header del tenant
+- [ ] i18n ES / EN / PT + selector — **diferido al cierre** (base en `lib/i18n/`, ver abajo)
 - [x] Checkout pagos (demo + API Stripe placeholder) en eventos de pago
 - [x] PWA: manifest + service worker
 - [x] Integraciones admin (Google Calendar, Mailchimp, POS)
@@ -289,6 +289,17 @@ Items del Master Prompt que pueden ir en paralelo o post-lanzamiento:
 - [x] Motor de recomendaciones por scoring (base ML)
 
 **Migración:** `20260710100000_phase4_vision.sql` (tabla `payments`)
+
+### i18n — activar al final (cuando el copy esté estable)
+
+| Qué ya existe | Qué falta al activar |
+|---------------|----------------------|
+| `lib/i18n/messages/{es,en,pt}.ts` | Envolver tenant en `LocaleProvider` |
+| `lib/i18n/index.ts` (`t`, cookies, locales) | Montar `LocaleSwitcher` en header |
+| `contexts/LocaleContext.tsx` | Migrar UI a claves `t('…')` o extraer de `es.ts` |
+| `components/member/locale-switcher.tsx` | `organization_settings.locale` por tenant |
+
+**Orden recomendado:** Supabase + producto estable → pasada única de strings → selector → prueba EN/PT.
 
 ---
 

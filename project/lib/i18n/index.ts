@@ -1,3 +1,8 @@
+/**
+ * i18n — preparado para activación final (post-estabilización).
+ * Hoy la app usa español vía `lib/i18n/es.ts` y copy inline.
+ * Al cerrar features: conectar LocaleProvider + LocaleSwitcher y migrar strings a messages/.
+ */
 import { messages as en } from './messages/en'
 import { messages as es } from './messages/es'
 import { messages as pt } from './messages/pt'

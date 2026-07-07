@@ -834,8 +834,13 @@
     }
   }
 
+  .tenant-theme .hero-subtitle {
+    font-weight: 200;
+    -webkit-font-smoothing: antialiased;
+  }
+
   .tenant-theme .font-display {
-    font-family: var(--font-serif), ui-serif, Georgia, serif;
+    font-family: var(--font-display, var(--font-serif)), ui-serif, Georgia, serif;
   }
 
   .tenant-theme .label-caps {

@@ -342,17 +342,19 @@ export default function BrandingPage() {
               <Type className="h-5 w-5" />
               Tipografía
             </CardTitle>
-            <CardDescription>Fuente y estilo del texto</CardDescription>
+            <CardDescription>Fuente de títulos (el cuerpo usa Plus Jakarta Sans)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="font_family">Familia tipográfica</Label>
+              <Label htmlFor="font_family">Fuente de títulos</Label>
               <select
                 id="font_family"
                 value={branding.font_family}
                 onChange={(e) => setBranding(prev => ({ ...prev, font_family: e.target.value }))}
                 className="w-full h-10 rounded-md border border-slate-200 dark:border-slate-700 bg-background px-3"
               >
+                <option value="Instrument Serif">Instrument Serif</option>
+                <option value="Playfair Display">Playfair Display</option>
                 <option value="Inter">Inter</option>
                 <option value="system-ui">Sistema</option>
                 <option value="Georgia">Georgia</option>
@@ -365,12 +367,12 @@ export default function BrandingPage() {
 
             {/* Typography Preview */}
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
-              <p className="text-sm font-medium mb-3" style={{ fontFamily: branding.font_family }}>Vista previa</p>
+              <p className="text-sm font-medium mb-3">Vista previa</p>
               <h3 className="text-2xl font-bold" style={{ fontFamily: branding.font_family }}>
                 {branding.name || 'Nombre de la organización'}
               </h3>
-              <p className="text-slate-600 mt-1" style={{ fontFamily: branding.font_family }}>
-                Así se verá el texto del cuerpo.
+              <p className="text-slate-600 mt-1 font-sans">
+                Así se verá el texto del cuerpo (Plus Jakarta Sans).
               </p>
             </div>
           </CardContent>

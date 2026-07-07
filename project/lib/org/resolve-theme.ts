@@ -35,7 +35,7 @@ export function resolveOrgTheme(org: TenantOrg): CSSProperties {
     '--motanos-gradient': `linear-gradient(90deg, ${accent}, ${accent})`,
     '--org-surface': surface,
     '--btn-fill': dark ? org.primary_color : 'hsl(var(--background))',
-    fontFamily: org.font_family ? `${org.font_family}, system-ui, sans-serif` : undefined,
+    ...(org.font_family ? { '--font-display': `${org.font_family}, ui-serif, Georgia, serif` } : {}),
   } as CSSProperties
 }
 

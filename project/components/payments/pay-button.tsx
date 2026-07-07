@@ -6,7 +6,6 @@ import { createCheckout } from '@/lib/payments/create-checkout'
 import type { CreateCheckoutInput } from '@/lib/payments/types'
 import { Loader2, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLocale } from '@/contexts/LocaleContext'
 
 interface PayButtonProps {
   input: Omit<CreateCheckoutInput, 'userId'> & { userId: string }
@@ -17,7 +16,6 @@ interface PayButtonProps {
 
 export function PayButton({ input, label, onPaid, disabled }: PayButtonProps) {
   const [loading, setLoading] = useState(false)
-  const { t } = useLocale()
 
   async function handlePay() {
     setLoading(true)
@@ -30,7 +28,7 @@ export function PayButton({ input, label, onPaid, disabled }: PayButtonProps) {
       }
 
       if (result.status === 'demo_paid') {
-        toast.success(t('common.demoPayment'))
+        toast.success('Pago simulado (demo)')
         await onPaid?.()
         return
       }
@@ -51,7 +49,7 @@ export function PayButton({ input, label, onPaid, disabled }: PayButtonProps) {
   return (
     <Button onClick={handlePay} disabled={disabled || loading} className="gap-2">
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-      {label ?? t('common.payNow')}
+      {label ?? 'Pagar ahora'}
     </Button>
   )
 }

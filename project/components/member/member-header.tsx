@@ -7,9 +7,9 @@ import type { TenantOrg } from '@/lib/org/types'
 import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationBell } from '@/components/member/notification-bell'
-import { LocaleSwitcher } from '@/components/member/locale-switcher'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react'
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -43,13 +43,13 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
 
   useEffect(() => {
     if (!menuOpen) return
+    lockBodyScroll()
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMenuOpen(false)
     }
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKeyDown)
     return () => {
-      document.body.style.overflow = ''
+      unlockBodyScroll()
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [menuOpen])
@@ -133,7 +133,6 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
         </nav>
 
         <div className="hidden items-center gap-1.5 lg:flex">
-          <LocaleSwitcher className="mr-2" />
           {!loading && user && <NotificationBell darkNav={darkNav} />}
           {!loading && user ? (
             <>
