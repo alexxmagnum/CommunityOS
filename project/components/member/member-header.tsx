@@ -6,6 +6,7 @@ import { useTenantOptional } from '@/contexts/TenantContext'
 import type { TenantOrg } from '@/lib/org/types'
 import { IKON_BRAND } from '@/lib/org/ikon-brand'
 import { useAuth } from '@/contexts/AuthContext'
+import { NotificationBell } from '@/components/member/notification-bell'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -137,6 +138,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
         </nav>
 
         <div className="hidden items-center gap-1.5 lg:flex">
+          {!loading && user && <NotificationBell darkNav={darkNav} />}
           {!loading && user ? (
             <>
               {(isOrgAdmin() || isPlatformAdmin()) && (

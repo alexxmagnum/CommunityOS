@@ -9,9 +9,9 @@ const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdn
 
 const STEPS = [
   'Abre el SQL Editor de tu proyecto Supabase.',
-  'Copia el contenido de supabase/APPLY_REMAINING.sql (RLS + datos IKON).',
-  'Pégalo en el editor y pulsa Run.',
-  'Recarga localhost:3000 — deberías ver la homepage de IKON.',
+  'Si la base está vacía: ejecuta supabase/APPLY_ALL.sql.',
+  'Si ya tienes el esquema base: ejecuta supabase/APPLY_REMAINING.sql y luego supabase/migrations/20260707100000_phase1_availability_notifications.sql (Fase 1).',
+  'Recarga localhost:3000 — reservas con horarios, notificaciones e invitaciones.',
 ]
 
 export default function SetupPage() {

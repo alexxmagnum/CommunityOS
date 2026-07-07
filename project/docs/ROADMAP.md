@@ -84,13 +84,23 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Admin media | `/dashboard/media` |
 | Conectar a menú y eventos | `cover_image_url`, `dish_images` o FK a `media_library` |
 
-### Entregables Fase 1
-- [ ] Reservas con disponibilidad real
-- [ ] Admin de reservas operativo
-- [ ] Sin demo mode por defecto en producción
-- [ ] Invitaciones de miembros funcionando
-- [ ] Fotos reales en menú y eventos
-- [ ] Notificaciones in-app básicas
+## Fase 1 — En progreso
+
+### Completado en código (rama `develop`)
+- [x] Motor de disponibilidad (`lib/reservations/availability.ts`)
+- [x] Selector de horarios en reservas miembro
+- [x] Prevención de conflictos (trigger SQL)
+- [x] Admin de reservas (`/dashboard/reservations`)
+- [x] Notificaciones in-app (tabla + campana)
+- [x] Invitaciones por enlace (`/invite/[token]`)
+- [x] Media library básica (`/dashboard/media`)
+- [x] Espacios terraza/salón seed IKON
+
+### Pendiente Fase 1
+- [ ] Aplicar migración `20260707100000_phase1_availability_notifications.sql` en Supabase
+- [ ] Reducir demo mode / deshardcodear IKON
+- [ ] Email transaccional para invitaciones
+
 
 **Rama sugerida:** `feature/phase-1-vendible`
 
