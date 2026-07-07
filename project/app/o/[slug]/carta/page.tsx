@@ -6,6 +6,7 @@ import { useTenant } from '@/contexts/TenantContext'
 import { loadTenantMenu } from '@/lib/org/load-tenant-menu'
 import { MemberHeader } from '@/components/member/member-header'
 import { DigitalMenu } from '@/components/member/digital-menu'
+import { EmptySection } from '@/components/member/empty-section'
 import type { TenantMenuData } from '@/lib/org/types'
 import { Loader2 } from 'lucide-react'
 
@@ -31,15 +32,24 @@ export default function TenantCartaPage() {
           <>
             {menu.demoMode && (
               <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-900/80">
-                Carta demo · conecta Supabase para ver la carta real del restaurante
+                Vista demo · conecta Supabase para ver la carta real del restaurante
               </p>
             )}
+            {!menu.restaurant || menu.dishes.length === 0 ? (
+              <EmptySection
+                title="Carta no disponible"
+                description={menu.demoMode ? 'Configura el restaurante en Supabase.' : 'El restaurante aún no ha publicado su carta.'}
+                actionLabel="Reservar mesa"
+                actionHref={path('/reservations?type=restaurant')}
+              />
+            ) : (
             <DigitalMenu
               restaurant={menu.restaurant}
               categories={menu.categories}
               dishes={menu.dishes}
               reserveHref={path('/reservations?type=restaurant')}
             />
+            )}
           </>
         )}
       </div>

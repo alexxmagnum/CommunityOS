@@ -6,7 +6,7 @@ export const DEMO_TENANT: TenantOrg = {
   id: 'demo-ikon',
   name: 'IKON',
   slug: 'ikon',
-  logo_url: null,
+  logo_url: '/brand/ikon-logo.png',
   primary_color: IKON_BRAND.primary,
   secondary_color: IKON_BRAND.secondary,
   accent_color: IKON_BRAND.accent,

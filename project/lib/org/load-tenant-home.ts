@@ -1,23 +1,21 @@
 import { DEFAULT_ORG_SLUG } from '@/lib/constants'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { DEMO_ACTIVITIES, DEMO_EVENTS, DEMO_FACILITIES, DEMO_TENANT } from './demo-tenant'
-import { IKON_BRAND } from './ikon-brand'
+import { isSupabaseConfigured } from './is-supabase-configured'
 import type { TenantHomeData } from './types'
 
-function applyIkonBrand(org: TenantHomeData['org']) {
-  if (org.slug !== 'ikon') return org
-  return {
-    ...org,
-    primary_color: IKON_BRAND.ink,
-    secondary_color: IKON_BRAND.elevated,
-    accent_color: IKON_BRAND.accent,
-    accentCyan: IKON_BRAND.accentCyan,
-    accentLime: IKON_BRAND.accentLime,
-    city: org.city || 'Marbella',
-  }
-}
-
 export async function loadTenantHome(slug = DEFAULT_ORG_SLUG): Promise<TenantHomeData> {
+  if (!isSupabaseConfigured()) {
+    return {
+      org: { ...DEMO_TENANT, slug },
+      events: DEMO_EVENTS,
+      facilities: DEMO_FACILITIES,
+      activities: DEMO_ACTIVITIES,
+      stats: { events: DEMO_EVENTS.length, members: 248 },
+      demoMode: true,
+    }
+  }
+
   const supabase = getSupabaseClient()
 
   const { data: orgData } = await supabase
@@ -29,7 +27,7 @@ export async function loadTenantHome(slug = DEFAULT_ORG_SLUG): Promise<TenantHom
 
   if (!orgData) {
     return {
-      org: DEMO_TENANT,
+      org: { ...DEMO_TENANT, slug },
       events: DEMO_EVENTS,
       facilities: DEMO_FACILITIES,
       activities: DEMO_ACTIVITIES,
@@ -38,7 +36,7 @@ export async function loadTenantHome(slug = DEFAULT_ORG_SLUG): Promise<TenantHom
     }
   }
 
-  const [eventsRes, facilitiesRes, activityRes, eventCount, memberCount] = await Promise.all([
+  const [eventsRes, facilitiesRes, activityRes, eventCount, memberCount, venueRes] = await Promise.all([
     supabase.from('events').select('id, title, type, starts_at, available_spots, price, cover_image_url, location_details')
       .eq('organization_id', orgData.id).eq('status', 'published').eq('is_public', true)
       .gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true }).limit(8),
@@ -51,24 +49,23 @@ export async function loadTenantHome(slug = DEFAULT_ORG_SLUG): Promise<TenantHom
       .eq('organization_id', orgData.id).eq('status', 'published'),
     supabase.from('organization_members').select('*', { count: 'exact', head: true })
       .eq('organization_id', orgData.id).eq('status', 'active'),
+    supabase.from('venues').select('city').eq('organization_id', orgData.id).eq('is_active', true).limit(1).maybeSingle(),
   ])
 
   return {
-    org: applyIkonBrand({
+    org: {
       ...orgData,
-      city: 'Marbella',
-    }),
-    events: eventsRes.data?.length ? eventsRes.data : DEMO_EVENTS,
-    facilities: facilitiesRes.data?.length
-      ? facilitiesRes.data.map((f) => ({
-          ...f,
-          sport: Array.isArray(f.sport) ? f.sport[0] : f.sport,
-        }))
-      : DEMO_FACILITIES,
-    activities: activityRes.data?.length ? activityRes.data : DEMO_ACTIVITIES,
+      city: venueRes.data?.city ?? undefined,
+    },
+    events: eventsRes.data ?? [],
+    facilities: (facilitiesRes.data ?? []).map((f) => ({
+      ...f,
+      sport: Array.isArray(f.sport) ? f.sport[0] : f.sport,
+    })),
+    activities: activityRes.data ?? [],
     stats: {
-      events: eventCount.count || DEMO_EVENTS.length,
-      members: memberCount.count || 0,
+      events: eventCount.count ?? 0,
+      members: memberCount.count ?? 0,
     },
     demoMode: false,
   }

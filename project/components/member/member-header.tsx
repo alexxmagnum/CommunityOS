@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTenantOptional } from '@/contexts/TenantContext'
 import type { TenantOrg } from '@/lib/org/types'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationBell } from '@/components/member/notification-bell'
 import { Button } from '@/components/ui/button'
@@ -63,6 +63,8 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
   const transparent = variant === 'transparent'
   const darkNav = isIkon || transparent
 
+  const logoUrl = getTenantLogoUrl(org)
+
   const showDemoBanner = demoMode && !hideDemoBanner
   const headerOffset = showDemoBanner
     ? `calc(${HEADER_BAR_HEIGHT} + ${DEMO_BANNER_HEIGHT})`
@@ -94,22 +96,13 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
       )}
       <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-6 lg:px-8">
         <Link href={path()} className="header-logo-wrap group flex shrink-0 items-center">
-          {isIkon ? (
+          {logoUrl ? (
             <img
-              src={`${IKON_BRAND.logoImage}?v=7`}
-              alt="IKON Sports & Lounge Sant Jordi"
-              className="header-logo-img"
-              width={1024}
-              height={565}
+              src={logoUrl}
+              alt={org.name}
+              className={cn('header-logo-img w-auto object-contain', isIkon ? '' : 'max-h-10')}
               decoding="async"
             />
-          ) : org.logo_url ? (
-            <div className="flex items-center gap-3">
-              <img src={org.logo_url} alt={org.name} className="h-10 w-10 rounded-full object-cover ring-motanos" />
-              <span className={cn('font-display text-xl tracking-wide', darkNav ? 'text-white' : 'text-neutral-900')}>
-                {org.name}
-              </span>
-            </div>
           ) : (
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-motanos text-sm font-bold text-black ring-motanos">

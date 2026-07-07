@@ -1,6 +1,7 @@
 import { DEFAULT_ORG_SLUG } from '@/lib/constants'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { DEMO_MENU_CATEGORIES, DEMO_MENU_DISHES, DEMO_RESTAURANT } from './demo-menu'
+import { isSupabaseConfigured } from './is-supabase-configured'
 import type { MenuCategory, MenuDish, TenantMenuData } from './types'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -15,6 +16,15 @@ function localizeCategoryName(name: string) {
 }
 
 export async function loadTenantMenu(slug = DEFAULT_ORG_SLUG): Promise<TenantMenuData> {
+  if (!isSupabaseConfigured()) {
+    return {
+      restaurant: DEMO_RESTAURANT,
+      categories: DEMO_MENU_CATEGORIES,
+      dishes: DEMO_MENU_DISHES,
+      demoMode: true,
+    }
+  }
+
   const supabase = getSupabaseClient()
 
   const { data: orgData } = await supabase
@@ -76,15 +86,6 @@ export async function loadTenantMenu(slug = DEFAULT_ORG_SLUG): Promise<TenantMen
     is_available: d.is_available ?? true,
   }))
 
-  if (!categories.length && !dishes.length) {
-    return {
-      restaurant: DEMO_RESTAURANT,
-      categories: DEMO_MENU_CATEGORIES,
-      dishes: DEMO_MENU_DISHES,
-      demoMode: true,
-    }
-  }
-
   return {
     restaurant: restaurantRes.data
       ? {
@@ -92,9 +93,9 @@ export async function loadTenantMenu(slug = DEFAULT_ORG_SLUG): Promise<TenantMen
           name: restaurantRes.data.name,
           description: restaurantRes.data.description,
         }
-      : { id: 'default', name: 'Restaurante', description: null },
-    categories: categories.length ? categories : DEMO_MENU_CATEGORIES,
-    dishes: dishes.length ? dishes : DEMO_MENU_DISHES,
+      : null,
+    categories,
+    dishes,
     demoMode: false,
   }
 }

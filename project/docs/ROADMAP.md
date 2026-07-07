@@ -97,9 +97,13 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 - [x] Espacios terraza/salón seed IKON
 
 ### Pendiente Fase 1
-- [ ] Aplicar migración `20260707100000_phase1_availability_notifications.sql` en Supabase
-- [ ] Reducir demo mode / deshardcodear IKON
+- [ ] Aplicar migraciones SQL en Supabase (phase1 + branding assets)
 - [ ] Email transaccional para invitaciones
+
+### Completado Fase 1 (código)
+- [x] Reducir demo mode — solo sin Supabase o sin org en DB
+- [x] Branding dinámico desde `organizations` (`resolve-theme.ts`)
+- [x] Sin mezcla de datos demo cuando la org existe en DB
 
 
 **Rama sugerida:** `feature/phase-1-vendible`

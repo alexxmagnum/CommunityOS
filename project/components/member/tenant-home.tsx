@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { useTenant } from '@/contexts/TenantContext'
 import { generateDiscoveryPrompts } from '@/lib/discovery/generate-prompts'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate, formatRelativeTime } from '@/lib/format/dates'
 import { MemberHeader } from '@/components/member/member-header'
 import { IkonHero } from '@/components/member/ikon-hero'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
+import { EmptySection } from '@/components/member/empty-section'
 import { Calendar, Clock, Flag, MapPin, Users, UtensilsCrossed } from 'lucide-react'
 
 function todayLabel() {
@@ -168,10 +169,17 @@ export function TenantHomePage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            {events.slice(0, 4).map((event) => (
+            {events.length === 0 ? (
+              <EmptySection
+                title="No hay experiencias publicadas"
+                description="Vuelve pronto o explora las reservas del club."
+                actionLabel="Ver reservas"
+                actionHref={path('/reservations')}
+              />
+            ) : events.slice(0, 4).map((event) => (
               <Link
                 key={event.id}
-                href={demoMode ? path('/events') : path(`/events/${event.id}`)}
+                href={demoMode || event.id.startsWith('demo-') ? path('/events') : path(`/events/${event.id}`)}
                 className="group overflow-hidden rounded-3xl bg-neutral-900 shadow-lg"
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
@@ -209,7 +217,11 @@ export function TenantHomePage() {
             <p className="label-caps">Comunidad</p>
             <h2 className="font-display mt-3 mb-8 text-4xl text-foreground">Actividad reciente</h2>
             <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-neutral-900">
-              {activities.map((a) => (
+              {activities.length === 0 ? (
+                <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+                  Aún no hay actividad en el club.
+                </div>
+              ) : activities.map((a) => (
                 <div key={a.id} className="px-6 py-5">
                   <p className="font-medium text-foreground">{a.title}</p>
                   {a.description && <p className="mt-1 text-sm text-muted-foreground">{a.description}</p>}
@@ -224,7 +236,7 @@ export function TenantHomePage() {
             <div className="mt-6 grid gap-4">
               {[
                 { icon: Calendar, value: stats.events, label: 'Experiencias activas' },
-                { icon: Users, value: stats.members || '240+', label: 'Socios activos' },
+                { icon: Users, value: stats.members > 0 ? stats.members : '—', label: 'Socios activos' },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} className="rounded-2xl bg-neutral-900 p-8 text-center">
                   <Icon className="mx-auto mb-4 h-5 w-5 text-accent-solid" />
@@ -238,22 +250,18 @@ export function TenantHomePage() {
       </main>
 
       <footer className="bg-black px-6 py-16 text-center">
-        {isIkon ? (
+        {getTenantLogoUrl(org) ? (
           <img
-            src={`${IKON_BRAND.logoImage}?v=7`}
-            alt="IKON Sports & Lounge Sant Jordi"
+            src={getTenantLogoUrl(org)!}
+            alt={org.name}
             className="mx-auto h-20 w-auto object-contain"
-            width={1024}
-            height={565}
           />
         ) : (
           <p className="font-display text-4xl tracking-wide text-white">{org.name}</p>
         )}
-        {!isIkon && (
-          <p className="mt-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-            {org.city || 'Private Club'}
-          </p>
-        )}
+        <p className="mt-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          {org.city || 'Private Club'}
+        </p>
         <p className="mt-8 text-xs text-white/35">© {new Date().getFullYear()} {org.name}</p>
       </footer>
     </>
