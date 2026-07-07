@@ -255,11 +255,13 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Documentación API interna | Para integraciones futuras |
 
 ### Entregables Fase 3
-- [ ] Nuevo tenant operativo solo desde Super Admin
-- [ ] Dominio custom funcionando
-- [ ] Billing con Stripe
-- [ ] Realtime en homepage y eventos
-- [ ] CI verde en cada PR
+- [x] Segundo tenant demo (Marina) operativo en `/o/marina`
+- [x] Dominio custom (middleware `*.localhost` → tenant)
+- [x] Páginas legales editables por tenant
+- [x] Billing con estructura Stripe + límites por tier
+- [x] Realtime demo en plazas de eventos + hook Supabase
+- [x] Salud de plataforma en Super Admin
+- [x] CI: typecheck, vitest, build
 
 **Rama sugerida:** `feature/phase-3-escala`
 

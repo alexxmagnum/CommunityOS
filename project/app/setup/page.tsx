@@ -10,8 +10,8 @@ const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdn
 const STEPS = [
   'Abre el SQL Editor de tu proyecto Supabase.',
   'Si la base está vacía: ejecuta supabase/APPLY_ALL.sql.',
-  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego las migraciones phase1, ikon_branding_assets y phase2_tournaments_community.',
-  'Recarga localhost:3000 — reservas con horarios, notificaciones e invitaciones.',
+  'Si ya tienes el esquema base: ejecuta APPLY_REMAINING.sql, luego las migraciones phase1, ikon_branding_assets, phase2 y phase3_saas_scale.',
+  'Recarga localhost:3000 — prueba /o/ikon y /o/marina (white-label demo).',
 ]
 
 export default function SetupPage() {
@@ -38,6 +38,19 @@ export default function SetupPage() {
             </ol>
           </CardContent>
         </Card>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link href="/o/ikon">
+            <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 sm:w-auto">
+              Demo IKON
+            </Button>
+          </Link>
+          <Link href="/o/marina">
+            <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 sm:w-auto">
+              Demo Marina
+            </Button>
+          </Link>
+        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a href={SUPABASE_SQL_URL} target="_blank" rel="noopener noreferrer">

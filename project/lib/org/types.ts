@@ -10,6 +10,11 @@ export interface TenantOrg {
   font_family?: string
   theme_mode?: 'light' | 'dark' | 'system'
   city?: string
+  hero_image_url?: string | null
+  hero_tagline?: string | null
+  locale?: string
+  currency?: string
+  custom_domain?: string | null
 }
 
 export interface TenantEvent {

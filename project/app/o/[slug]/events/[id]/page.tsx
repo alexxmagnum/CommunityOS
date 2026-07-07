@@ -13,12 +13,14 @@ import { Badge } from '@/components/ui/badge'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate } from '@/lib/format/dates'
 import { DEMO_TOURNAMENT_ID } from '@/lib/tournaments/demo-tournament'
+import { LiveSpotsBadge } from '@/components/events/live-spots-badge'
+import { useRealtimeSpots } from '@/hooks/use-realtime-spots'
 import { Check, Clock, Loader2, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function TenantEventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { org, demoMode, path } = useTenant()
+  const { org, demoMode, path, events: tenantEvents } = useTenant()
   const { user } = useAuth()
   const router = useRouter()
   const [event, setEvent] = useState<any>(null)
@@ -27,11 +29,12 @@ export default function TenantEventDetailPage() {
   const [checkInToken, setCheckInToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [registering, setRegistering] = useState(false)
+  const liveSpots = useRealtimeSpots(id, event?.available_spots ?? null, demoMode)
 
   useEffect(() => {
     async function load() {
       if (demoMode || id.startsWith('demo-')) {
-        const match = (await import('@/lib/org/demo-tenant')).DEMO_EVENTS.find((e) => e.id === id)
+        const match = tenantEvents.find((e) => e.id === id)
         setEvent(match || null)
         setLoading(false)
         return
@@ -54,7 +57,7 @@ export default function TenantEventDetailPage() {
       setLoading(false)
     }
     load()
-  }, [id, user, org.id, demoMode])
+  }, [id, user, org.id, demoMode, tenantEvents])
 
   async function handleRegister() {
     if (demoMode) {
@@ -146,7 +149,7 @@ export default function TenantEventDetailPage() {
     )
   }
 
-  const soldOut = event.available_spots === 0
+  const soldOut = liveSpots === 0
   const isTournament = event.type === 'tournament'
 
   return (
@@ -167,7 +170,10 @@ export default function TenantEventDetailPage() {
           <div className="flex items-center gap-2"><Clock className="h-4 w-4" />{formatEventDate(event.starts_at)}</div>
           {event.location_details && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" />{event.location_details}</div>}
           {event.capacity != null && (
-            <div className="flex items-center gap-2"><Users className="h-4 w-4" />{event.available_spots}/{event.capacity} plazas</div>
+            <div className="flex items-center gap-2"><Users className="h-4 w-4" />{liveSpots ?? event.available_spots}/{event.capacity} plazas</div>
+          )}
+          {event.capacity == null && liveSpots != null && (
+            <LiveSpotsBadge spots={liveSpots} className="mt-1" />
           )}
         </div>
 

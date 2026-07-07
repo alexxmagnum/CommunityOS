@@ -1,8 +1,19 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { rewritePathForCustomDomain, resolveSlugFromHost } from '@/lib/org/resolve-host-tenant'
+import { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  const slug = resolveSlugFromHost(request.headers.get('host'))
+  if (slug) {
+    const rewritten = rewritePathForCustomDomain(request.nextUrl.pathname, slug)
+    if (rewritten) {
+      const url = request.nextUrl.clone()
+      url.pathname = rewritten
+      return updateSession(new NextRequest(url, request))
+    }
+  }
+
+  return updateSession(request)
 }
 
 export const config = {

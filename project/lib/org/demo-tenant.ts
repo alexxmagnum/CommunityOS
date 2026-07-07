@@ -1,6 +1,8 @@
 import type { TenantActivity, TenantEvent, TenantFacility, TenantOrg } from './types'
 import { IKON_BRAND } from './ikon-brand'
 
+export const DEMO_HERO = 'https://images.unsplash.com/photo-1535131749006-ba7a34837537?auto=format&fit=crop&w=2400&q=90'
+
 /** Primer tenant demo — IKON Golf Club premium */
 export const DEMO_TENANT: TenantOrg = {
   id: 'demo-ikon',
@@ -13,6 +15,10 @@ export const DEMO_TENANT: TenantOrg = {
   font_family: 'Instrument Serif',
   theme_mode: 'light',
   city: 'Marbella',
+  hero_image_url: DEMO_HERO,
+  locale: 'es-ES',
+  currency: 'EUR',
+  custom_domain: 'ikon.localhost',
 }
 
 export const DEMO_EVENTS: TenantEvent[] = [
@@ -69,5 +75,3 @@ export const DEMO_ACTIVITIES: TenantActivity[] = [
   { id: 'demo-a1', title: 'María se inscribió al torneo de socios', description: 'Formato medal play · 18 hoyos', created_at: new Date(Date.now() - 3600000).toISOString() },
   { id: 'demo-a2', title: 'Mesa reservada en terraza', description: 'Cata de vinos · 2 comensales', created_at: new Date(Date.now() - 7200000).toISOString() },
 ]
-
-export const DEMO_HERO = 'https://images.unsplash.com/photo-1535131749006-ba7a34837537?auto=format&fit=crop&w=2400&q=90'

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Building2, BarChart3, Menu, X, LogOut, Shield, Users, CreditCard } from 'lucide-react'
+import { Building2, BarChart3, Menu, X, LogOut, Shield, Users, CreditCard, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'Panel', href: '/platform-admin', icon: BarChart3 },
   { name: 'Organizaciones', href: '/platform-admin/organizations', icon: Building2 },
   { name: 'Suscripciones', href: '/platform-admin/subscriptions', icon: CreditCard },
+  { name: 'Salud', href: '/platform-admin/health', icon: Activity },
   { name: 'Usuarios', href: '/platform-admin/users', icon: Users },
 ]
 

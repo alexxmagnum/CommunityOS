@@ -22,6 +22,8 @@ import {
   CalendarCheck,
   ImageIcon,
   Flag,
+  FileText,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -46,6 +48,8 @@ const navigation = [
   { name: 'Espacios', href: '/dashboard/venues', icon: MapPin },
   { name: 'Medios', href: '/dashboard/media', icon: ImageIcon },
   { name: 'Marca', href: '/dashboard/branding', icon: Palette },
+  { name: 'Legal', href: '/dashboard/legal', icon: FileText },
+  { name: 'Facturación', href: '/dashboard/billing', icon: CreditCard },
   { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
 ]
 

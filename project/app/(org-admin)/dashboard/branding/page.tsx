@@ -32,6 +32,8 @@ export default function BrandingPage() {
     accent_color: '#0f3460',
     font_family: 'Inter',
     theme_mode: 'light' as 'light' | 'dark' | 'system',
+    hero_image_url: '',
+    hero_tagline: '',
   })
 
   const supabase = getSupabaseClient()
@@ -67,6 +69,8 @@ export default function BrandingPage() {
             accent_color: org.accent_color || '#0f3460',
             font_family: org.font_family || 'Inter',
             theme_mode: (org.theme_mode as 'light' | 'dark' | 'system') || 'light',
+            hero_image_url: '',
+            hero_tagline: '',
           })
         }
       } catch (error) {
@@ -101,6 +105,32 @@ export default function BrandingPage() {
         .eq('id', activeOrganization.organization_id)
 
       if (error) throw error
+
+      if (branding.hero_image_url || branding.hero_tagline) {
+        const heroValue = {
+          hero_image_url: branding.hero_image_url || null,
+          hero_tagline: branding.hero_tagline || null,
+        }
+        const { data: existing } = await supabase
+          .from('organization_settings')
+          .select('id')
+          .eq('organization_id', activeOrganization.organization_id)
+          .eq('key', 'branding_hero')
+          .maybeSingle()
+
+        if (existing?.id) {
+          await supabase
+            .from('organization_settings')
+            .update({ value: heroValue as never, updated_at: new Date().toISOString() })
+            .eq('id', existing.id)
+        } else {
+          await supabase.from('organization_settings').insert({
+            organization_id: activeOrganization.organization_id,
+            key: 'branding_hero',
+            value: heroValue as never,
+          })
+        }
+      }
 
       toast.success('Marca actualizada correctamente')
     } catch (error: any) {
@@ -347,6 +377,37 @@ export default function BrandingPage() {
         </Card>
 
         {/* Theme Mode */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Image className="h-5 w-5" />
+              Hero y portada
+            </CardTitle>
+            <CardDescription>Imagen y mensaje principal de la homepage del club</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="hero_image_url">URL imagen hero</Label>
+              <Input
+                id="hero_image_url"
+                value={branding.hero_image_url}
+                onChange={(e) => setBranding((prev) => ({ ...prev, hero_image_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hero_tagline">Eslogan / subtítulo</Label>
+              <Textarea
+                id="hero_tagline"
+                rows={2}
+                value={branding.hero_tagline}
+                onChange={(e) => setBranding((prev) => ({ ...prev, hero_tagline: e.target.value }))}
+                placeholder="Experiencias únicas en tu club..."
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

@@ -1,39 +1,29 @@
 import { DEFAULT_ORG_SLUG } from '@/lib/constants'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { DEMO_ACTIVITIES, DEMO_EVENTS, DEMO_FACILITIES, DEMO_TENANT } from './demo-tenant'
+import { buildDemoTenantHome } from './demo-tenants'
 import { isSupabaseConfigured } from './is-supabase-configured'
 import type { TenantHomeData } from './types'
 
 export async function loadTenantHome(slug = DEFAULT_ORG_SLUG): Promise<TenantHomeData> {
   if (!isSupabaseConfigured()) {
-    return {
-      org: { ...DEMO_TENANT, slug },
-      events: DEMO_EVENTS,
-      facilities: DEMO_FACILITIES,
-      activities: DEMO_ACTIVITIES,
-      stats: { events: DEMO_EVENTS.length, members: 248 },
-      demoMode: true,
-    }
+    const demo = buildDemoTenantHome(slug)
+    if (demo) return demo
+    return buildDemoTenantHome('ikon')!
   }
 
   const supabase = getSupabaseClient()
 
   const { data: orgData } = await supabase
     .from('organizations')
-    .select('id, name, slug, logo_url, favicon_url, primary_color, secondary_color, accent_color, font_family, theme_mode')
+    .select('id, name, slug, domain, logo_url, favicon_url, primary_color, secondary_color, accent_color, font_family, theme_mode')
     .eq('slug', slug)
     .eq('is_active', true)
     .maybeSingle()
 
   if (!orgData) {
-    return {
-      org: { ...DEMO_TENANT, slug },
-      events: DEMO_EVENTS,
-      facilities: DEMO_FACILITIES,
-      activities: DEMO_ACTIVITIES,
-      stats: { events: DEMO_EVENTS.length, members: 248 },
-      demoMode: true,
-    }
+    const demo = buildDemoTenantHome(slug)
+    if (demo) return demo
+    return buildDemoTenantHome('ikon')!
   }
 
   const [eventsRes, facilitiesRes, activityRes, eventCount, memberCount, venueRes] = await Promise.all([
