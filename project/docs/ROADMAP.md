@@ -44,7 +44,7 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Supabase CLI | Migraciones versionadas, `db push`, tipos generados | `supabase/` |
 | `.env.example` + README | Onboarding de desarrolladores | raíz `project/` |
 | Quitar dependencia demo | Homepage y menú funcionan solo con datos reales; demo como flag explícito | `lib/org/demo-tenant.ts`, `load-tenant-home.ts` |
-| Deshardcodear IKON | Branding 100% desde `organizations`; `ikon-brand.ts` solo como preset opcional | `lib/org/ikon-brand.ts`, `OrgThemeProvider` |
+| Deshardcodear IKON | ✅ Branding desde `organizations` + settings; `ikon-brand.ts` solo preset demo | `lib/org/tenant-experience.ts`, panel Marca |
 
 ### 1.2 Motor de disponibilidad y reservas
 
@@ -98,7 +98,7 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 
 ### Pendiente Fase 1
 - [ ] Aplicar migraciones SQL en Supabase (phase1 + branding assets)
-- [ ] Email transaccional para invitaciones
+- [x] Email transaccional para invitaciones
 
 ### Completado Fase 1 (código)
 - [x] Reducir demo mode — solo sin Supabase o sin org en DB
@@ -122,9 +122,9 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 - [x] Migración SQL `20260708100000_phase2_tournaments_community.sql`
 
 ### Pendiente Fase 2
-- [ ] Generación automática de bracket al crear torneo
-- [ ] Admin check-in escáner
-- [ ] Recordatorios de eventos (notificaciones programadas)
+- [x] Generación automática de cuadro desde el panel de torneos
+- [x] Admin check-in escáner
+- [x] Recordatorios de eventos (cron + email Resend)
 
 **Rama sugerida:** `feature/phase-2-diferenciacion`
 
@@ -190,7 +190,7 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 - [ ] Al menos un torneo end-to-end con bracket
 - [ ] Perfiles con historial y badges
 - [ ] Discovery personalizado por usuario
-- [ ] QR check-in en eventos
+- [x] QR check-in en eventos
 - [ ] Homepage que cambia según quién eres y qué hiciste antes
 
 **Rama sugerida:** `feature/phase-2-diferenciacion`

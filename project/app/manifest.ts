@@ -7,6 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Clubs, comunidades y experiencias en un solo lugar',
     start_url: '/',
     display: 'standalone',
+    orientation: 'portrait-primary',
     background_color: '#0c0f14',
     theme_color: '#0c0f14',
     icons: [
