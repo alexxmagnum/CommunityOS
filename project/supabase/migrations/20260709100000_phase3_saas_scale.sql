@@ -32,7 +32,7 @@ CREATE POLICY "org_admins_analytics_read" ON analytics_events
       WHERE om.organization_id = analytics_events.organization_id
         AND om.user_id = auth.uid()
         AND om.status = 'active'
-        AND r.name IN ('owner', 'admin')
+        AND r.name IN ('org_owner', 'org_admin')
     )
   );
 

@@ -818,42 +818,49 @@ CREATE POLICY "org_members_profiles" ON profiles FOR SELECT
 -- RLS POLICIES - ORGANIZATION MEMBERS
 -- ============================================================================
 
+CREATE OR REPLACE FUNCTION public.is_org_admin_of(org_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM organization_members om
+    JOIN roles r ON r.id = om.role_id
+    WHERE om.organization_id = org_id
+      AND om.user_id = auth.uid()
+      AND om.status = 'active'
+      AND r.name IN ('org_owner', 'org_admin')
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_org_admin_of(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_org_admin_of(uuid) TO authenticated;
+
 DROP POLICY IF EXISTS "org_members_read_own_org" ON organization_members;
 CREATE POLICY "org_members_read_own_org" ON organization_members FOR SELECT
   TO authenticated
   USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid() AND status = 'active'
-    )
+    user_id = auth.uid()
     OR EXISTS (SELECT 1 FROM platform_admins WHERE user_id = auth.uid())
+    OR public.is_org_admin_of(organization_id)
   );
 
--- Org admins can manage members
+-- Org admins can manage members (sin recursión RLS)
 DROP POLICY IF EXISTS "org_admins_manage_members" ON organization_members;
 CREATE POLICY "org_admins_manage_members" ON organization_members FOR ALL
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM organization_members om
-      JOIN roles r ON r.id = om.role_id
-      WHERE om.organization_id = organization_members.organization_id
-      AND om.user_id = auth.uid()
-      AND om.status = 'active'
-      AND r.name IN ('org_owner', 'org_admin')
-    )
-    OR EXISTS (SELECT 1 FROM platform_admins WHERE user_id = auth.uid())
+    EXISTS (SELECT 1 FROM platform_admins WHERE user_id = auth.uid())
+    OR public.is_org_admin_of(organization_id)
+    OR user_id = auth.uid()
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM organization_members om
-      JOIN roles r ON r.id = om.role_id
-      WHERE om.organization_id = organization_members.organization_id
-      AND om.user_id = auth.uid()
-      AND om.status = 'active'
-      AND r.name IN ('org_owner', 'org_admin')
-    )
-    OR EXISTS (SELECT 1 FROM platform_admins WHERE user_id = auth.uid())
+    EXISTS (SELECT 1 FROM platform_admins WHERE user_id = auth.uid())
+    OR public.is_org_admin_of(organization_id)
+    OR user_id = auth.uid()
   );
 
 -- Users can insert themselves when joining
@@ -1576,7 +1583,14 @@ CREATE POLICY "media_library_write_org" ON media_library FOR ALL
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = now();
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = TG_TABLE_SCHEMA
+      AND table_name = TG_TABLE_NAME
+      AND column_name = 'updated_at'
+  ) THEN
+    NEW.updated_at = now();
+  END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1589,7 +1603,7 @@ BEGIN
   FOR tbl IN 
     SELECT table_name FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name NOT IN ('platform_admins', 'sports', 'activity_feed', 'event_participants', 'tournament_participants', 'matches', 'user_achievements')
+    AND table_name NOT IN ('platform_admins', 'roles', 'sports', 'activity_feed', 'event_participants', 'tournament_participants', 'matches', 'user_achievements')
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS update_%s_updated_at ON %s', tbl.table_name, tbl.table_name);
     EXECUTE format('CREATE TRIGGER update_%s_updated_at BEFORE UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', tbl.table_name, tbl.table_name);
@@ -1798,7 +1812,7 @@ AND NOT EXISTS (
 
 -- Restaurant
 INSERT INTO restaurants (organization_id, name, description, cuisine_type, is_active)
-SELECT o.id, 'IKON Terrace', 'Mediterranean dining with live music', 'Mediterranean', true
+SELECT o.id, 'IKON Terrace', 'Gastronomía mediterránea con música en vivo', 'Mediterránea', true
 FROM organizations o WHERE o.slug = 'ikon'
 AND NOT EXISTS (
   SELECT 1 FROM restaurants r WHERE r.organization_id = o.id AND r.name = 'IKON Terrace'
@@ -1809,9 +1823,12 @@ INSERT INTO menu_categories (organization_id, restaurant_id, name, sort_order, i
 SELECT o.id, r.id, cat.name, cat.sort_order, true
 FROM organizations o
 JOIN restaurants r ON r.organization_id = o.id AND r.name = 'IKON Terrace'
-CROSS JOIN (VALUES ('Starters', 1), ('Mains', 2), ('Desserts', 3), ('Drinks', 4)) AS cat(name, sort_order)
+CROSS JOIN (VALUES ('Entrantes', 1), ('Principales', 2), ('Postres', 3), ('Bebidas', 4)) AS cat(name, sort_order)
 WHERE o.slug = 'ikon'
-ON CONFLICT DO NOTHING;
+AND NOT EXISTS (
+  SELECT 1 FROM menu_categories mc
+  WHERE mc.organization_id = o.id AND mc.name = cat.name
+);
 
 -- Sample dishes (skip if already seeded)
 DO $$
@@ -1825,20 +1842,20 @@ BEGIN
   SELECT id INTO org_uuid FROM organizations WHERE slug = 'ikon';
   IF org_uuid IS NULL THEN RETURN; END IF;
 
-  SELECT id INTO cat_starters FROM menu_categories WHERE organization_id = org_uuid AND name = 'Starters' LIMIT 1;
-  SELECT id INTO cat_mains FROM menu_categories WHERE organization_id = org_uuid AND name = 'Mains' LIMIT 1;
-  SELECT id INTO cat_desserts FROM menu_categories WHERE organization_id = org_uuid AND name = 'Desserts' LIMIT 1;
-  SELECT id INTO cat_drinks FROM menu_categories WHERE organization_id = org_uuid AND name = 'Drinks' LIMIT 1;
+  SELECT id INTO cat_starters FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Entrantes', 'Starters') ORDER BY CASE WHEN name = 'Entrantes' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_mains FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Principales', 'Mains') ORDER BY CASE WHEN name = 'Principales' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_desserts FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Postres', 'Desserts') ORDER BY CASE WHEN name = 'Postres' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_drinks FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Bebidas', 'Drinks') ORDER BY CASE WHEN name = 'Bebidas' THEN 0 ELSE 1 END LIMIT 1;
 
   IF NOT EXISTS (SELECT 1 FROM dishes WHERE organization_id = org_uuid AND name = 'Gambas al ajillo') THEN
     INSERT INTO dishes (organization_id, category_id, name, description, price, is_available)
     VALUES
-      (org_uuid, cat_starters, 'Gambas al ajillo', 'Fresh prawns in garlic oil', 14.50, true),
-      (org_uuid, cat_starters, 'Burrata salad', 'With heirloom tomatoes', 12.00, true),
-      (org_uuid, cat_mains, 'Grilled sea bass', 'With seasonal vegetables', 26.00, true),
-      (org_uuid, cat_mains, 'IKON burger', 'Wagyu beef, truffle mayo', 22.00, true),
-      (org_uuid, cat_desserts, 'Tiramisu', 'Classic recipe', 9.00, true),
-      (org_uuid, cat_drinks, 'House wine glass', 'Red or white', 6.50, true);
+      (org_uuid, cat_starters, 'Gambas al ajillo', 'Gambas frescas en aceite de ajo', 14.50, true),
+      (org_uuid, cat_starters, 'Ensalada de burrata', 'Tomates heirloom, albahaca y aceite de oliva virgen', 12.00, true),
+      (org_uuid, cat_mains, 'Lubina a la brasa', 'Verduras de temporada y emulsión cítrica', 26.00, true),
+      (org_uuid, cat_mains, 'Burger IKON', 'Wagyu, mayo de trufa y pan brioche', 22.00, true),
+      (org_uuid, cat_desserts, 'Tiramisú', 'Receta clásica de la casa', 9.00, true),
+      (org_uuid, cat_drinks, 'Copa de vino de la casa', 'Tinto o blanco', 6.50, true);
   END IF;
 END $$;
 

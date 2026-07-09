@@ -63,20 +63,22 @@ INSERT INTO organizations (
   true
 ) ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
+  primary_color = EXCLUDED.primary_color,
+  secondary_color = EXCLUDED.secondary_color,
   accent_color = EXCLUDED.accent_color,
   modules = EXCLUDED.modules;
 
 -- Venue
 INSERT INTO venues (organization_id, name, description, type, city, country, is_active)
-SELECT o.id, 'IKON Main Campus', 'Golf, padel, dining and events', 'main', 'Marbella', 'Spain', true
+SELECT o.id, 'Campus principal IKON', 'Golf, pádel, restaurante y eventos', 'main', 'Marbella', 'España', true
 FROM organizations o WHERE o.slug = 'ikon'
 AND NOT EXISTS (
-  SELECT 1 FROM venues v WHERE v.organization_id = o.id AND v.name = 'IKON Main Campus'
+  SELECT 1 FROM venues v WHERE v.organization_id = o.id AND v.name IN ('IKON Main Campus', 'Campus principal IKON')
 );
 
 -- Restaurant
 INSERT INTO restaurants (organization_id, name, description, cuisine_type, is_active)
-SELECT o.id, 'IKON Terrace', 'Mediterranean dining with live music', 'Mediterranean', true
+SELECT o.id, 'IKON Terrace', 'Gastronomía mediterránea con música en vivo', 'Mediterránea', true
 FROM organizations o WHERE o.slug = 'ikon'
 AND NOT EXISTS (
   SELECT 1 FROM restaurants r WHERE r.organization_id = o.id AND r.name = 'IKON Terrace'
@@ -87,9 +89,12 @@ INSERT INTO menu_categories (organization_id, restaurant_id, name, sort_order, i
 SELECT o.id, r.id, cat.name, cat.sort_order, true
 FROM organizations o
 JOIN restaurants r ON r.organization_id = o.id AND r.name = 'IKON Terrace'
-CROSS JOIN (VALUES ('Starters', 1), ('Mains', 2), ('Desserts', 3), ('Drinks', 4)) AS cat(name, sort_order)
+CROSS JOIN (VALUES ('Entrantes', 1), ('Principales', 2), ('Postres', 3), ('Bebidas', 4)) AS cat(name, sort_order)
 WHERE o.slug = 'ikon'
-ON CONFLICT DO NOTHING;
+AND NOT EXISTS (
+  SELECT 1 FROM menu_categories mc
+  WHERE mc.organization_id = o.id AND mc.name = cat.name
+);
 
 -- Sample dishes (skip if already seeded)
 DO $$
@@ -103,20 +108,20 @@ BEGIN
   SELECT id INTO org_uuid FROM organizations WHERE slug = 'ikon';
   IF org_uuid IS NULL THEN RETURN; END IF;
 
-  SELECT id INTO cat_starters FROM menu_categories WHERE organization_id = org_uuid AND name = 'Starters' LIMIT 1;
-  SELECT id INTO cat_mains FROM menu_categories WHERE organization_id = org_uuid AND name = 'Mains' LIMIT 1;
-  SELECT id INTO cat_desserts FROM menu_categories WHERE organization_id = org_uuid AND name = 'Desserts' LIMIT 1;
-  SELECT id INTO cat_drinks FROM menu_categories WHERE organization_id = org_uuid AND name = 'Drinks' LIMIT 1;
+  SELECT id INTO cat_starters FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Entrantes', 'Starters') ORDER BY CASE WHEN name = 'Entrantes' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_mains FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Principales', 'Mains') ORDER BY CASE WHEN name = 'Principales' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_desserts FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Postres', 'Desserts') ORDER BY CASE WHEN name = 'Postres' THEN 0 ELSE 1 END LIMIT 1;
+  SELECT id INTO cat_drinks FROM menu_categories WHERE organization_id = org_uuid AND name IN ('Bebidas', 'Drinks') ORDER BY CASE WHEN name = 'Bebidas' THEN 0 ELSE 1 END LIMIT 1;
 
   IF NOT EXISTS (SELECT 1 FROM dishes WHERE organization_id = org_uuid AND name = 'Gambas al ajillo') THEN
     INSERT INTO dishes (organization_id, category_id, name, description, price, is_available)
     VALUES
-      (org_uuid, cat_starters, 'Gambas al ajillo', 'Fresh prawns in garlic oil', 14.50, true),
-      (org_uuid, cat_starters, 'Burrata salad', 'With heirloom tomatoes', 12.00, true),
-      (org_uuid, cat_mains, 'Grilled sea bass', 'With seasonal vegetables', 26.00, true),
-      (org_uuid, cat_mains, 'IKON burger', 'Wagyu beef, truffle mayo', 22.00, true),
-      (org_uuid, cat_desserts, 'Tiramisu', 'Classic recipe', 9.00, true),
-      (org_uuid, cat_drinks, 'House wine glass', 'Red or white', 6.50, true);
+      (org_uuid, cat_starters, 'Gambas al ajillo', 'Gambas frescas en aceite de ajo', 14.50, true),
+      (org_uuid, cat_starters, 'Ensalada de burrata', 'Tomates heirloom, albahaca y aceite de oliva virgen', 12.00, true),
+      (org_uuid, cat_mains, 'Lubina a la brasa', 'Verduras de temporada y emulsión cítrica', 26.00, true),
+      (org_uuid, cat_mains, 'Burger IKON', 'Wagyu, mayo de trufa y pan brioche', 22.00, true),
+      (org_uuid, cat_desserts, 'Tiramisú', 'Receta clásica de la casa', 9.00, true),
+      (org_uuid, cat_drinks, 'Copa de vino de la casa', 'Tinto o blanco', 6.50, true);
   END IF;
 END $$;
 
@@ -126,11 +131,11 @@ SELECT o.id, s.id, f.name, f.description, f.type, true,
   jsonb_build_object('duration_minutes', 60, 'price_per_hour', f.price)
 FROM organizations o
 CROSS JOIN (VALUES
-  ('padel', 'Padel Court 1', 'Glass court with LED lighting', 'outdoor', 35),
-  ('padel', 'Padel Court 2', 'Premium WPT standard', 'outdoor', 35),
-  ('padel', 'Padel Court 3', 'Covered court', 'covered', 40),
-  ('golf', 'Golf Course', '18-hole championship course', 'outdoor', 80),
-  ('tennis', 'Tennis Court 1', 'Clay surface', 'outdoor', 30)
+  ('padel', 'Pista de pádel 1', 'Pista acristalada con iluminación LED', 'outdoor', 35),
+  ('padel', 'Pista de pádel 2', 'Estándar WPT premium', 'outdoor', 35),
+  ('padel', 'Pista de pádel 3', 'Pista cubierta', 'covered', 40),
+  ('golf', 'Campo de golf', 'Campo championship de 18 hoyos', 'outdoor', 80),
+  ('tennis', 'Pista de tenis 1', 'Pista de tierra batida', 'outdoor', 30)
 ) AS f(sport, name, description, type, price)
 JOIN sports s ON s.name = f.sport
 WHERE o.slug = 'ikon'
@@ -145,14 +150,14 @@ SELECT o.id, e.title, e.description, e.type, e.starts_at::timestamptz, e.ends_at
   e.capacity, e.available_spots, e.price, 'published', true, e.location
 FROM organizations o
 CROSS JOIN (VALUES
-  ('Wine Tasting Evening', 'Exclusive tasting with sommelier', 'experience',
-   '2026-07-12 19:00:00+00', '2026-07-12 22:00:00+00', 20, 8, 45, 'Main Terrace'),
-  ('Padel Tournament Finals', 'Season finale — members welcome', 'tournament',
-   '2026-07-14 10:00:00+00', '2026-07-14 18:00:00+00', 32, 0, 0, 'Padel Courts'),
-  ('Sunday Brunch', 'Live jazz and Mediterranean buffet', 'event',
-   '2026-07-13 11:00:00+00', '2026-07-13 15:00:00+00', 40, 24, 35, 'IKON Terrace'),
-  ('Sunset Yoga', 'Outdoor session overlooking the course', 'workshop',
-   '2026-07-11 18:30:00+00', '2026-07-11 20:00:00+00', 15, 12, 15, 'Garden Lawn')
+  ('Cata de vinos en la terraza', 'Cata exclusiva con sumiller', 'experience',
+   '2026-07-12 19:00:00+00', '2026-07-12 22:00:00+00', 20, 8, 45, 'Terraza principal'),
+  ('Final del torneo de pádel', 'Final de temporada — socios bienvenidos', 'tournament',
+   '2026-07-14 10:00:00+00', '2026-07-14 18:00:00+00', 32, 0, 0, 'Pistas de pádel'),
+  ('Brunch dominical', 'Jazz en vivo y buffet mediterráneo', 'event',
+   '2026-07-13 11:00:00+00', '2026-07-13 15:00:00+00', 40, 24, 35, 'Terraza IKON'),
+  ('Yoga al atardecer', 'Sesión al aire libre con vistas al campo', 'workshop',
+   '2026-07-11 18:30:00+00', '2026-07-11 20:00:00+00', 15, 12, 15, 'Jardín del club')
 ) AS e(title, description, type, starts_at, ends_at, capacity, available_spots, price, location)
 WHERE o.slug = 'ikon'
 AND NOT EXISTS (SELECT 1 FROM events ev WHERE ev.organization_id = o.id AND ev.title = e.title);
@@ -174,10 +179,10 @@ INSERT INTO activity_feed (organization_id, activity_type, title, description, i
 SELECT o.id, a.type, a.title, a.description, true
 FROM organizations o
 CROSS JOIN (VALUES
-  ('event_join', 'Alex joined Padel Tournament', 'Registered for the season finale'),
-  ('reservation', 'Sarah reserved Wine Tasting', 'Party of 2 confirmed'),
-  ('tournament_win', 'Mike won Golf Competition', 'Stableford format — 38 points'),
-  ('reservation', 'Emma booked Terrace table', 'Table for 4 — Sunday Brunch')
+  ('event_join', 'Alex se inscribió al torneo de pádel', 'Inscrito en la final de temporada'),
+  ('reservation', 'Sarah reservó cata de vinos', 'Mesa para 2 confirmada'),
+  ('tournament_win', 'Mike ganó la competición de golf', 'Formato stableford — 38 puntos'),
+  ('reservation', 'Emma reservó mesa en terraza', 'Mesa para 4 — brunch dominical')
 ) AS a(type, title, description)
 WHERE o.slug = 'ikon'
 AND NOT EXISTS (
