@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getGolfSplashCopy } from '@/lib/org/tenant-experience'
 import type { TenantOrg } from '@/lib/org/types'
-import { bindGolfHitAudio, playGolfHitSound, unlockSplashAudio } from '@/lib/splash/golf-hit-sound'
+import { bindGolfHitAudio, playGolfHitSound } from '@/lib/splash/golf-hit-sound'
 import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
@@ -110,24 +110,12 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
   }, [showLogo])
 
   useEffect(() => {
-    const unlock = () => unlockSplashAudio()
-
-    document.addEventListener('pointerdown', unlock, { passive: true })
-    document.addEventListener('touchstart', unlock, { passive: true })
-    document.addEventListener('keydown', unlock)
-
     void preloadImages([
       GOLF_BALL_IMAGE,
       GOLF_BALL_MOBILE,
       GOLF_IMPACT_IMAGE,
       GOLF_IMPACT_MOBILE,
     ]).then(() => setImagesReady(true))
-
-    return () => {
-      document.removeEventListener('pointerdown', unlock)
-      document.removeEventListener('touchstart', unlock)
-      document.removeEventListener('keydown', unlock)
-    }
   }, [])
 
   useLayoutEffect(() => {
@@ -258,10 +246,6 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
         phase === 'exit' && 'ikon-splash--exit',
       )}
       aria-hidden={phase === 'exit'}
-      onPointerDown={() => {
-        unlockSplashAudio()
-        if (phase === 'hold' || phase === 'golf' || phase === 'line3') finish()
-      }}
       onAnimationEnd={(event) => {
         if (phase === 'exit' && event.animationName === 'ikon-splash-fade-out') {
           finish()
@@ -280,7 +264,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
       </button>
       <audio
         ref={bindGolfHitAudio}
-        src="/sounds/golf-hit.mp3"
+        src="/sounds/golf-hit.mp3?v=3"
         preload="auto"
         playsInline
         className="hidden"

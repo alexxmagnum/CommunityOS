@@ -1,55 +1,89 @@
-/** Golpe de golf — MP3 real en /sounds/golf-hit.mp3 */
-const HIT_SOUND_SRC = '/sounds/golf-hit.mp3'
+/** Golpe de golf — MP3 en /sounds/golf-hit.mp3 */
+const HIT_SOUND_SRC = '/sounds/golf-hit.mp3?v=3'
 
 let hitAudio: HTMLAudioElement | null = null
-let audioReady = false
+let webCtx: AudioContext | null = null
+let webBuffer: AudioBuffer | null = null
+let bufferLoading: Promise<void> | null = null
+
+function loadWebBuffer() {
+  if (webBuffer || typeof window === 'undefined') return Promise.resolve()
+  if (bufferLoading) return bufferLoading
+
+  bufferLoading = (async () => {
+    try {
+      webCtx = new AudioContext()
+      const res = await fetch(HIT_SOUND_SRC)
+      if (!res.ok) return
+      webBuffer = await webCtx.decodeAudioData(await res.arrayBuffer())
+    } catch {
+      // Sin Web Audio; se usará HTMLAudioElement
+    }
+  })()
+
+  return bufferLoading
+}
+
+/** Reproduce en silencio al cargar — desbloquea autoplay en Chrome/Android. */
+function startMutedBed(audio: HTMLAudioElement) {
+  audio.muted = true
+  audio.volume = 1
+  audio.loop = true
+  audio.currentTime = 0
+  void audio.play().catch(() => {})
+  void loadWebBuffer()
+}
 
 export function bindGolfHitAudio(element: HTMLAudioElement | null) {
   if (!element) return
   hitAudio = element
-  element.volume = 1
   element.preload = 'auto'
-  audioReady = true
+  element.setAttribute('playsinline', '')
+  startMutedBed(element)
 }
 
-export function unlockSplashAudio() {
-  const audio = hitAudio
-  if (!audio || typeof window === 'undefined') return
+function playWebAudio() {
+  if (!webCtx || !webBuffer) return false
 
-  audio.volume = 0.001
-  void audio.play().then(() => {
-    audio.pause()
-    audio.currentTime = 0
-    audio.volume = 1
-  }).catch(() => {
-    audio.volume = 1
-  })
+  try {
+    if (webCtx.state === 'suspended') {
+      void webCtx.resume()
+    }
+    const source = webCtx.createBufferSource()
+    source.buffer = webBuffer
+    source.connect(webCtx.destination)
+    source.start(0)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function playGolfHitSound() {
-  const audio = hitAudio
-  if (!audio || typeof window === 'undefined') return
+  if (typeof window === 'undefined') return
 
-  audio.volume = 1
-  audio.currentTime = 0
+  const playHtml = async (audio: HTMLAudioElement) => {
+    audio.loop = false
+    audio.pause()
+    audio.currentTime = 0
+    audio.muted = false
+    audio.volume = 1
 
-  const attempt = () => {
-    void audio.play().catch(() => {
-      unlockSplashAudio()
-      window.setTimeout(() => {
-        audio.currentTime = 0
-        void audio.play().catch(() => {})
-      }, 40)
-    })
+    try {
+      await audio.play()
+      return
+    } catch {
+      if (playWebAudio()) return
+    }
   }
 
-  if (audioReady) {
-    attempt()
+  if (hitAudio) {
+    void playHtml(hitAudio)
     return
   }
 
   const fallback = new Audio(HIT_SOUND_SRC)
-  fallback.volume = 1
   fallback.preload = 'auto'
-  void fallback.play().catch(() => {})
+  fallback.setAttribute('playsinline', '')
+  void playHtml(fallback)
 }
