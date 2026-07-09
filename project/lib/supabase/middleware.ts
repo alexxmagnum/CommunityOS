@@ -41,12 +41,28 @@ export async function updateSession(request: NextRequest) {
   const protectedPaths = ['/dashboard', '/admin', '/settings', '/profile']
   const isProtectedPath =
     protectedPaths.some((p) => request.nextUrl.pathname.startsWith(p)) ||
-    /^\/o\/[^/]+\/(reservations|profile)/.test(request.nextUrl.pathname)
+    /^\/o\/[^/]+\/(reservations|profile|dashboard)/.test(request.nextUrl.pathname)
+
+  const tenantProtected = request.nextUrl.pathname.match(
+    /^\/o\/([^/]+)\/(reservations|profile|dashboard)(?:\/|$)/,
+  )
+
+  if (tenantProtected && !user) {
+    const [, slug, section] = tenantProtected
+    const url = request.nextUrl.clone()
+    if (section === 'dashboard') {
+      url.pathname = `/o/${slug}/admin/login`
+    } else {
+      url.pathname = `/o/${slug}/login`
+    }
+    url.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(url)
+  }
 
   if (isProtectedPath && !user) {
-    // Redirect to login
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+    url.pathname = isDashboard ? '/auth/admin/login' : '/auth/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
@@ -55,7 +71,7 @@ export async function updateSession(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/platform-admin')) {
     if (!user) {
       const url = request.nextUrl.clone()
-      url.pathname = '/auth/login'
+      url.pathname = '/auth/platform/login'
       url.searchParams.set('redirect', request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
