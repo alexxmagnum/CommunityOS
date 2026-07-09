@@ -167,16 +167,11 @@ export function TenantCinematicHero({
   return (
     <section className="hero-premium relative min-h-[100svh] bg-black lg:min-h-[92vh]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="hidden h-full lg:block">
-          <HeroBackground className="hero-image-natural h-full w-full object-cover" preferredImage={copy.heroImage ?? undefined} />
-        </div>
-        <div className="h-full lg:hidden">
-          <HeroBackground
-            className="hero-image-mobile h-full w-full object-cover"
-            image={HERO_IMAGE_MOBILE}
-            preferredImage={copy.heroImage ?? undefined}
-          />
-        </div>
+        <HeroBackground
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          image={HERO_IMAGE_MOBILE}
+          preferredImage={copy.heroImage ?? undefined}
+        />
         <div className="scrim-hero absolute inset-0" />
       </div>
 
