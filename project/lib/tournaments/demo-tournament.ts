@@ -8,7 +8,7 @@ export const DEMO_TOURNAMENTS: TournamentListItem[] = [
     name: 'Finales Torneo de Pádel',
     format: 'single_elimination',
     status: 'in_progress',
-    sport_name: 'Padel',
+    sport_name: 'Pádel',
     event_id: 'demo-e2',
     starts_at: '2026-07-14T10:00:00.000Z',
     participant_count: 8,
@@ -22,7 +22,7 @@ export const DEMO_TOURNAMENT_DETAIL: TournamentDetail = {
   name: 'Finales Torneo de Pádel',
   format: 'single_elimination',
   status: 'in_progress',
-  sport_name: 'Padel',
+  sport_name: 'Pádel',
   starts_at: '2026-07-14T10:00:00.000Z',
   participants: [
     { id: 'tp1', team_name: 'Equipo García', seed: 1, status: 'registered' },

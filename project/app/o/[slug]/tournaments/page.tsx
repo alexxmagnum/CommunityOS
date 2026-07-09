@@ -10,6 +10,7 @@ import type { TournamentListItem } from '@/lib/tournaments/types'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Trophy } from 'lucide-react'
 import { formatEventDate } from '@/lib/format/dates'
+import { labelSportName } from '@/lib/i18n/es'
 import { EmptySection } from '@/components/member/empty-section'
 
 export default function TournamentsListPage() {
@@ -30,7 +31,7 @@ export default function TournamentsListPage() {
       <div className="mx-auto max-w-4xl px-6 py-12">
         <p className="label-caps">Competición</p>
         <h1 className="font-display mt-2 text-4xl text-[color:var(--org-primary)]">Torneos</h1>
-        <p className="mt-3 text-muted-foreground">Brackets en vivo, rankings y resultados.</p>
+        <p className="mt-3 text-muted-foreground">Cuadros en vivo, rankings y resultados.</p>
 
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -53,12 +54,16 @@ export default function TournamentsListPage() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge variant="outline">{TOURNAMENT_FORMAT_LABELS[t.format]}</Badge>
                       <Badge>{TOURNAMENT_STATUS_LABELS[t.status]}</Badge>
-                      {t.sport_name && <span className="text-sm text-muted-foreground">{t.sport_name}</span>}
+                      {t.sport_name && (
+                        <span className="text-sm text-muted-foreground">
+                          {labelSportName(null, t.sport_name)}
+                        </span>
+                      )}
                     </div>
                     {t.starts_at && <p className="mt-2 text-sm text-muted-foreground">{formatEventDate(t.starts_at)}</p>}
                   </div>
                 </div>
-                <span className="text-sm font-medium text-motanos">Ver bracket →</span>
+                <span className="text-sm font-medium text-motanos">Ver cuadro →</span>
               </Link>
             ))}
           </div>

@@ -1,7 +1,16 @@
+import { labelSportName } from '@/lib/i18n/es'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/org/is-supabase-configured'
 import { DEMO_TOURNAMENT_DETAIL, DEMO_TOURNAMENTS } from './demo-tournament'
 import type { TournamentDetail, TournamentListItem } from './types'
+
+function parseMatchScore(score: unknown): string | null {
+  if (!score || typeof score !== 'object') return null
+  if ('summary' in score && typeof (score as { summary?: unknown }).summary === 'string') {
+    return (score as { summary: string }).summary
+  }
+  return null
+}
 
 function mapMatch(
   m: Record<string, unknown>,
@@ -10,7 +19,7 @@ function mapMatch(
   const p1 = m.participant1_id ? participants.get(m.participant1_id as string) ?? null : null
   const p2 = m.participant2_id ? participants.get(m.participant2_id as string) ?? null : null
   const winnerId = m.winner_id as string | null
-  const score = m.score && typeof m.score === 'object' ? JSON.stringify(m.score) : null
+  const score = parseMatchScore(m.score)
   return {
     id: m.id as string,
     round: m.round as number,
@@ -36,7 +45,7 @@ export async function loadTournamentsList(
     .select(`
       id, format, status, event_id,
       event:events(title, starts_at),
-      sport:sports(display_name),
+      sport:sports(name, display_name),
       tournament_participants(count)
     `)
     .eq('organization_id', organizationId)
@@ -50,7 +59,7 @@ export async function loadTournamentsList(
       name: event?.title ?? 'Torneo',
       format: t.format,
       status: t.status,
-      sport_name: sport?.display_name ?? null,
+      sport_name: labelSportName(sport?.name, sport?.display_name),
       event_id: t.event_id,
       starts_at: event?.starts_at ?? null,
       participant_count: 0,
@@ -73,7 +82,7 @@ export async function loadTournamentDetail(
     .select(`
       id, organization_id, event_id, format, status,
       event:events(title, starts_at),
-      sport:sports(display_name)
+      sport:sports(name, display_name)
     `)
     .eq('id', tournamentId)
     .eq('organization_id', organizationId)
@@ -115,7 +124,7 @@ export async function loadTournamentDetail(
     name: event?.title ?? 'Torneo',
     format: tournament.format,
     status: tournament.status,
-    sport_name: sport?.display_name ?? null,
+    sport_name: labelSportName(sport?.name, sport?.display_name),
     starts_at: event?.starts_at ?? null,
     participants: participants || [],
     matches: (matches || []).map((m) => mapMatch(m, participantMap)),

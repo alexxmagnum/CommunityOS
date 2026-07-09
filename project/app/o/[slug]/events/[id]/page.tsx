@@ -6,12 +6,14 @@ import Link from 'next/link'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
+import { useLocale, useLabels } from '@/contexts/LocaleContext'
+import { tenantAuthUrl } from '@/lib/org/tenant-path'
 import { MemberHeader } from '@/components/member/member-header'
 import { RegistrationQr } from '@/components/events/registration-qr'
 import { PayButton } from '@/components/payments/pay-button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { labelEventType } from '@/lib/i18n/es'
+import { localizeEvent } from '@/lib/i18n/content'
 import { formatEventDate } from '@/lib/format/dates'
 import { DEMO_TOURNAMENT_ID } from '@/lib/tournaments/demo-tournament'
 import { LiveSpotsBadge } from '@/components/events/live-spots-badge'
@@ -21,7 +23,9 @@ import { toast } from 'sonner'
 
 export default function TenantEventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { org, demoMode, path, events: tenantEvents } = useTenant()
+  const { org, demoMode, path, slug, events: tenantEvents } = useTenant()
+  const { locale } = useLocale()
+  const { labelEventType } = useLabels()
   const { user } = useAuth()
   const router = useRouter()
   const [event, setEvent] = useState<any>(null)
@@ -43,16 +47,24 @@ export default function TenantEventDetailPage() {
 
       const supabase = getSupabaseClient()
       const { data: eventData } = await supabase.from('events').select('*').eq('id', id).eq('organization_id', org.id).maybeSingle()
-      setEvent(eventData)
+      setEvent(eventData ? localizeEvent(locale, eventData) : null)
 
       if (user && eventData) {
         const { data: reg } = await supabase.from('event_participants')
-          .select('id, check_in_token').eq('event_id', id).eq('user_id', user.id).maybeSingle()
+          .select('id, check_in_token')
+          .eq('event_id', id)
+          .eq('organization_id', org.id)
+          .eq('user_id', user.id)
+          .maybeSingle()
         setRegistered(!!reg)
         setCheckInToken(reg?.check_in_token ?? null)
 
         const { data: wait } = await supabase.from('event_waitlist')
-          .select('id').eq('event_id', id).eq('user_id', user.id).maybeSingle()
+          .select('id')
+          .eq('event_id', id)
+          .eq('organization_id', org.id)
+          .eq('user_id', user.id)
+          .maybeSingle()
         setWaitlisted(!!wait)
       }
       setLoading(false)
@@ -68,7 +80,7 @@ export default function TenantEventDetailPage() {
       return
     }
     if (!user) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(path(`/events/${id}`))}`)
+      router.push(tenantAuthUrl(slug, 'login', path(`/events/${id}`)))
       return
     }
     if (!event) return
@@ -109,7 +121,7 @@ export default function TenantEventDetailPage() {
       return
     }
     if (!user) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(path(`/events/${id}`))}`)
+      router.push(tenantAuthUrl(slug, 'login', path(`/events/${id}`)))
       return
     }
     if (!event) return
@@ -180,7 +192,7 @@ export default function TenantEventDetailPage() {
 
         {isTournament && (
           <Link href={path(`/tournaments/${demoMode ? DEMO_TOURNAMENT_ID : DEMO_TOURNAMENT_ID}`)} className="mt-4 inline-block text-sm font-medium text-motanos hover:underline">
-            Ver bracket del torneo →
+            Ver cuadro del torneo →
           </Link>
         )}
 
@@ -228,7 +240,7 @@ export default function TenantEventDetailPage() {
 
         {registered && checkInToken && (
           <div className="mt-8">
-            <RegistrationQr token={checkInToken} eventTitle={event.title} />
+            <RegistrationQr token={checkInToken} eventTitle={event.title} slug={slug} />
           </div>
         )}
       </div>

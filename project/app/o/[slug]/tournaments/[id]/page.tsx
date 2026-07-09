@@ -12,6 +12,7 @@ import type { TournamentDetail } from '@/lib/tournaments/types'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Trophy } from 'lucide-react'
 import { formatEventDate } from '@/lib/format/dates'
+import { labelSportName } from '@/lib/i18n/es'
 
 export default function TournamentDetailPage() {
   const params = useParams<{ slug: string; id: string }>()
@@ -58,7 +59,9 @@ export default function TournamentDetailPage() {
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="outline">{TOURNAMENT_FORMAT_LABELS[tournament.format]}</Badge>
               <Badge>{TOURNAMENT_STATUS_LABELS[tournament.status]}</Badge>
-              {tournament.sport_name && <Badge variant="secondary">{tournament.sport_name}</Badge>}
+              {tournament.sport_name && (
+                <Badge variant="secondary">{labelSportName(null, tournament.sport_name)}</Badge>
+              )}
             </div>
             {tournament.starts_at && (
               <p className="mt-2 text-sm text-muted-foreground">{formatEventDate(tournament.starts_at)}</p>
@@ -67,7 +70,7 @@ export default function TournamentDetailPage() {
         </div>
 
         <section className="mt-12">
-          <h2 className="font-display text-2xl">Bracket</h2>
+          <h2 className="font-display text-2xl">Cuadro del torneo</h2>
           <p className="mt-1 text-sm text-muted-foreground">{tournament.participants.length} equipos</p>
           <div className="mt-6">
             <BracketView matches={tournament.matches} />

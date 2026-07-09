@@ -69,8 +69,33 @@ export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
 
 export const TOURNAMENT_STATUS_LABELS: Record<TournamentStatus, string> = {
   registration: 'Inscripciones',
-  check_in: 'Check-in',
+  check_in: 'Acreditación',
   in_progress: 'En juego',
   completed: 'Finalizado',
   cancelled: 'Cancelado',
+}
+
+export type ParticipantStatus =
+  | 'registered'
+  | 'checked_in'
+  | 'eliminated'
+  | 'winner'
+  | 'cancelled'
+
+export const PARTICIPANT_STATUS_LABELS: Record<ParticipantStatus, string> = {
+  registered: 'Inscrito',
+  checked_in: 'Acreditado',
+  eliminated: 'Eliminado',
+  winner: 'Campeón',
+  cancelled: 'Cancelado',
+}
+
+export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'walkover'
+
+export const MATCH_STATUS_LABELS: Record<MatchStatus, string> = {
+  pending: 'Pendiente',
+  in_progress: 'En juego',
+  completed: 'Finalizado',
+  cancelled: 'Cancelado',
+  walkover: 'Pase directo',
 }
