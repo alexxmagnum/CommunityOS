@@ -4,17 +4,25 @@ import Link from 'next/link'
 import type { DiscoveryPrompt } from '@/lib/org/types'
 import { ArrowRight } from 'lucide-react'
 
-export function DiscoveryFeed({ prompts }: { prompts: DiscoveryPrompt[] }) {
+export function DiscoveryFeed({
+  prompts,
+  showHeader = true,
+}: {
+  prompts: DiscoveryPrompt[]
+  showHeader?: boolean
+}) {
   if (prompts.length === 0) return null
 
   return (
     <section aria-label="Descubrir experiencias">
-      <div className="mb-8">
-        <p className="label-caps">Ahora mismo</p>
-        <h2 className="font-display mt-3 text-4xl text-foreground md:text-5xl">
-          ¿Qué te apetece hoy?
-        </h2>
-      </div>
+      {showHeader && (
+        <div className="mb-8">
+          <p className="label-caps">Ahora mismo</p>
+          <h2 className="font-display mt-3 text-4xl text-foreground md:text-5xl">
+            ¿Qué te apetece hoy?
+          </h2>
+        </div>
+      )}
 
       <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {prompts.map((prompt) => (

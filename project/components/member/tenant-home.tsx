@@ -17,6 +17,7 @@ import { usesCinematicHero } from '@/lib/org/tenant-experience'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
 import { EmptySection } from '@/components/member/empty-section'
 import { ForYouSection } from '@/components/member/for-you-section'
+import { HomeSection } from '@/components/member/home-section'
 import { isModuleEnabled } from '@/lib/org/tenant-modules'
 import { Calendar, Clock, Flag, MapPin, Users, UtensilsCrossed } from 'lucide-react'
 
@@ -79,18 +80,8 @@ export function TenantHomePage() {
         )}
       </div>
 
-      <main className="mx-auto max-w-7xl space-y-24 px-6 py-20 lg:px-10 lg:py-28">
-        {user && forYouPrompts.length > 0 && <ForYouSection prompts={forYouPrompts} />}
-        <DiscoveryFeed prompts={prompts} />
-
-        <section>
-          <div className="mb-10">
-            <p className="label-caps">El club</p>
-            <h2 className="font-display mt-3 text-4xl text-foreground md:text-5xl">
-              Reserva tu experiencia
-            </h2>
-          </div>
-
+      <main className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
+        <HomeSection label="Reservas" title="Reserva tu experiencia">
           {(showSports || showRestaurant) && (
           <div className="grid gap-5 lg:grid-cols-12">
             {showSports && golfFacility && (
@@ -165,22 +156,22 @@ export function TenantHomePage() {
               ))}
             </div>
           )}
-        </section>
+          {!(showSports || showRestaurant) && (
+            <EmptySection
+              title="Reservas no disponibles"
+              description="Este club aún no tiene instalaciones configuradas."
+              actionLabel="Volver al inicio"
+              actionHref={path()}
+            />
+          )}
+        </HomeSection>
 
         {showEvents && (
-        <section>
-          <div className="mb-10 flex items-end justify-between gap-4">
-            <div>
-              <p className="label-caps">Agenda</p>
-              <h2 className="font-display mt-3 text-4xl text-foreground md:text-5xl">
-                Próximas experiencias
-              </h2>
-            </div>
-            <Link href={path('/events')} className="shrink-0 text-sm font-medium uppercase tracking-wider text-motanos">
-              Ver todo
-            </Link>
-          </div>
-
+        <HomeSection
+          label="Agenda"
+          title="Próximas experiencias"
+          action={{ href: path('/events'), label: 'Ver todo' }}
+        >
           <div className="grid gap-6 sm:grid-cols-2">
             {events.length === 0 ? (
               <EmptySection
@@ -223,13 +214,33 @@ export function TenantHomePage() {
               </Link>
             ))}
           </div>
-        </section>
+        </HomeSection>
         )}
 
-        <section className="grid gap-12 lg:grid-cols-5">
+        {(prompts.length > 0 || (user && forYouPrompts.length > 0)) && (
+          <HomeSection label="Explorar" title="¿Qué te apetece hoy?">
+            <div className="space-y-10">
+              {user && forYouPrompts.length > 0 && (
+                <div>
+                  <p className="label-caps mb-4">Para ti</p>
+                  <ForYouSection prompts={forYouPrompts} showHeader={false} />
+                </div>
+              )}
+              {prompts.length > 0 && (
+                <div>
+                  {user && forYouPrompts.length > 0 && (
+                    <p className="label-caps mb-4">Descubrir</p>
+                  )}
+                  <DiscoveryFeed prompts={prompts} showHeader={false} />
+                </div>
+              )}
+            </div>
+          </HomeSection>
+        )}
+
+        <HomeSection label="Comunidad" title="Actividad reciente">
+        <div className="grid gap-12 lg:grid-cols-5">
           <div className="lg:col-span-3">
-            <p className="label-caps">Comunidad</p>
-            <h2 className="font-display mt-3 mb-8 text-4xl text-foreground">Actividad reciente</h2>
             <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-neutral-900">
               {activities.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-muted-foreground">
@@ -246,8 +257,8 @@ export function TenantHomePage() {
           </div>
 
           <div className="lg:col-span-2">
-            <p className="label-caps">El club</p>
-            <div className="mt-6 grid gap-4">
+            <p className="label-caps mb-4">En números</p>
+            <div className="grid gap-4">
               {[
                 { icon: Calendar, value: stats.events, label: 'Experiencias activas' },
                 { icon: Users, value: stats.members > 0 ? stats.members : '—', label: 'Socios activos' },
@@ -260,7 +271,8 @@ export function TenantHomePage() {
               ))}
             </div>
           </div>
-        </section>
+        </div>
+        </HomeSection>
       </main>
 
       <TenantFooter />

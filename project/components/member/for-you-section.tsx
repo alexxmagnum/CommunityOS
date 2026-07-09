@@ -3,15 +3,25 @@
 import Link from 'next/link'
 import type { DiscoveryPrompt } from '@/lib/org/types'
 
-export function ForYouSection({ prompts, title = 'Para ti' }: { prompts: DiscoveryPrompt[]; title?: string }) {
+export function ForYouSection({
+  prompts,
+  title = 'Para ti',
+  showHeader = true,
+}: {
+  prompts: DiscoveryPrompt[]
+  title?: string
+  showHeader?: boolean
+}) {
   if (!prompts.length) return null
 
   return (
     <section>
-      <div className="mb-6">
-        <p className="label-caps">Personalizado</p>
-        <h2 className="font-display mt-2 text-3xl text-foreground md:text-4xl">{title}</h2>
-      </div>
+      {showHeader && (
+        <div className="mb-6">
+          <p className="label-caps">Personalizado</p>
+          <h2 className="font-display mt-2 text-3xl text-foreground md:text-4xl">{title}</h2>
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {prompts.slice(0, 3).map((p) => (
           <Link
