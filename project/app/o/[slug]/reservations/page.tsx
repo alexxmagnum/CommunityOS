@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
+import { tenantAuthUrl } from '@/lib/org/tenant-path'
 import { MemberHeader } from '@/components/member/member-header'
 import { SlotPicker } from '@/components/member/slot-picker'
 import { Button } from '@/components/ui/button'
@@ -13,15 +14,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Loader2, Flag, UtensilsCrossed } from 'lucide-react'
-import { labelReservationStatus } from '@/lib/i18n/es'
+import { localizeFacility } from '@/lib/i18n/content'
+import { useLocale, useLabels } from '@/contexts/LocaleContext'
 import { generateDaySlots, generateDemoSlots, type AvailableSlot } from '@/lib/reservations/availability'
 import { parseBookingConfig, isDateBookable } from '@/lib/reservations/booking-config'
 import { createReservation } from '@/lib/reservations/create-reservation'
+import { assertTenantOrgMatch } from '@/lib/org/tenant-org-id'
 import { toast } from 'sonner'
 
 function ReservationsContent() {
   const { user } = useAuth()
-  const { org, demoMode, path } = useTenant()
+  const { org, demoMode, path, slug } = useTenant()
+  const { locale } = useLocale()
+  const { labelReservationStatus } = useLabels()
+  const routeSlug = useParams<{ slug: string }>().slug
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -54,19 +60,44 @@ function ReservationsContent() {
     : selectedFacility?.booking_config
 
   async function loadReservations() {
-    if (!user || demoMode) return
+    if (!user || demoMode) {
+      setMyReservations([])
+      return
+    }
+
+    try {
+      assertTenantOrgMatch(org, routeSlug)
+    } catch {
+      setMyReservations([])
+      return
+    }
+
     const supabase = getSupabaseClient()
-    const { data: res } = await supabase
+    const { data: res, error } = await supabase
       .from('reservations')
-      .select('*, facility:facilities(name), restaurant:restaurants(name), space:spaces(name)')
+      .select('id, organization_id, reference_code, reserved_date, start_time, status, facility:facilities(name), restaurant:restaurants(name), space:spaces(name)')
       .eq('organization_id', org.id)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
-    setMyReservations(res || [])
+
+    if (error) {
+      setMyReservations([])
+      return
+    }
+
+    setMyReservations(
+      (res || []).filter((row) => row.organization_id === org.id && org.slug === routeSlug),
+    )
   }
 
   useEffect(() => {
+    setMyReservations([])
+    setFacilities([])
+    setSpaces([])
+    setRestaurant(null)
+    setLoading(true)
+
     async function load() {
       if (demoMode) {
         const { DEMO_FACILITIES } = await import('@/lib/org/demo-tenant')
@@ -83,10 +114,12 @@ function ReservationsContent() {
         .select('id, name, booking_config, sport:sports(display_name)')
         .eq('organization_id', org.id)
         .eq('is_active', true)
-      setFacilities((facs || []).map((f) => ({
-        ...f,
-        sport: Array.isArray(f.sport) ? f.sport[0] : f.sport,
-      })))
+      setFacilities((facs || []).map((f) =>
+        localizeFacility(locale, {
+          ...f,
+          sport: Array.isArray(f.sport) ? f.sport[0] : f.sport,
+        })
+      ))
 
       const { data: rest } = await supabase
         .from('restaurants')
@@ -110,7 +143,7 @@ function ReservationsContent() {
       setLoading(false)
     }
     load()
-  }, [user, org.id, demoMode])
+  }, [user, org.id, org.slug, routeSlug, demoMode])
 
   useEffect(() => {
     if (facilityParam) setForm((f) => ({ ...f, facility_id: facilityParam }))
@@ -167,7 +200,7 @@ function ReservationsContent() {
   async function handleBook(e: React.FormEvent) {
     e.preventDefault()
     if (!user) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(path('/reservations'))}`)
+      router.push(tenantAuthUrl(slug, 'login', path('/reservations')))
       return
     }
     if (demoMode) {
@@ -180,9 +213,18 @@ function ReservationsContent() {
     }
 
     setSubmitting(true)
+    try {
+      assertTenantOrgMatch(org, routeSlug)
+    } catch {
+      toast.error('No se pudo verificar el club. Recarga la página.')
+      setSubmitting(false)
+      return
+    }
+
     const supabase = getSupabaseClient()
     const result = await createReservation(supabase, {
       organizationId: org.id,
+      tenantSlug: routeSlug,
       userId: user.id,
       reservationType: isRestaurant ? (form.space_id ? 'space' : 'restaurant') : 'facility',
       facilityId: !isRestaurant ? form.facility_id : undefined,
@@ -338,7 +380,7 @@ function ReservationsContent() {
 
       {!user && (
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          <Link href={`/auth/login?redirect=${encodeURIComponent(path('/reservations'))}`} className="text-motanos">
+          <Link href={tenantAuthUrl(slug, 'login', path('/reservations'))} className="text-motanos">
             Inicia sesión
           </Link>{' '}para reservar
         </p>

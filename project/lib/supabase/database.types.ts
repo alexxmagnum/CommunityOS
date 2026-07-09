@@ -759,6 +759,7 @@ export interface Database {
           registered_at: string
           confirmed_at: string | null
           checked_in_at: string | null
+          check_in_token: string | null
           notes: string | null
           metadata: Json
         }
@@ -771,6 +772,7 @@ export interface Database {
           registered_at?: string
           confirmed_at?: string | null
           checked_in_at?: string | null
+          check_in_token?: string | null
           notes?: string | null
           metadata?: Json
         }
@@ -783,6 +785,7 @@ export interface Database {
           registered_at?: string
           confirmed_at?: string | null
           checked_in_at?: string | null
+          check_in_token?: string | null
           notes?: string | null
           metadata?: Json
         }

@@ -1,7 +1,10 @@
 import { parseBookingConfig } from './booking-config'
+import { isOrganizationUuid } from '@/lib/org/tenant-org-id'
+import { tenantDashboardPath } from '@/lib/org/tenant-path'
 
 export interface CreateReservationInput {
   organizationId: string
+  tenantSlug?: string
   userId: string
   reservationType: 'facility' | 'restaurant' | 'space'
   facilityId?: string
@@ -63,10 +66,65 @@ async function notifyOrgAdmins(
   )
 }
 
+async function validateTenantResources(
+  supabase: ReturnType<typeof import('@/lib/supabase/client').getSupabaseClient>,
+  input: CreateReservationInput
+): Promise<Error | null> {
+  if (!isOrganizationUuid(input.organizationId)) {
+    return new Error('Organización no válida para esta reserva')
+  }
+
+  if (input.facilityId) {
+    const { data } = await supabase
+      .from('facilities')
+      .select('organization_id')
+      .eq('id', input.facilityId)
+      .maybeSingle()
+    if (data?.organization_id !== input.organizationId) {
+      return new Error('La instalación no pertenece a este club')
+    }
+  }
+
+  if (input.restaurantId) {
+    const { data } = await supabase
+      .from('restaurants')
+      .select('organization_id')
+      .eq('id', input.restaurantId)
+      .maybeSingle()
+    if (data?.organization_id !== input.organizationId) {
+      return new Error('El restaurante no pertenece a este club')
+    }
+  }
+
+  if (input.spaceId) {
+    const { data } = await supabase
+      .from('spaces')
+      .select('organization_id')
+      .eq('id', input.spaceId)
+      .maybeSingle()
+    if (data?.organization_id !== input.organizationId) {
+      return new Error('El espacio no pertenece a este club')
+    }
+  }
+
+  return null
+}
+
+function tenantReservationsPath(slug?: string) {
+  return slug ? `/o/${slug}/reservations` : '/reservations'
+}
+
+function adminReservationsPath(slug?: string) {
+  return slug ? tenantDashboardPath(slug, 'reservations') : '/dashboard/reservations'
+}
+
 export async function createReservation(
   supabase: ReturnType<typeof import('@/lib/supabase/client').getSupabaseClient>,
   input: CreateReservationInput
 ) {
+  const resourceError = await validateTenantResources(supabase, input)
+  if (resourceError) return { error: resourceError }
+
   const config = parseBookingConfig(input.bookingConfig)
   const startTime = new Date(input.startIso)
   const endTime = new Date(input.endIso)
@@ -112,7 +170,7 @@ export async function createReservation(
     userId: input.userId,
     title: 'Reserva solicitada',
     body: `Tu reserva ${data.reference_code} está pendiente de confirmación.`,
-    link: '/reservations',
+    link: tenantReservationsPath(input.tenantSlug),
   })
 
   await notifyOrgAdmins(
@@ -120,7 +178,7 @@ export async function createReservation(
     input.organizationId,
     'Nueva reserva',
     `Reserva ${data.reference_code} — ${input.partySize} personas`,
-    '/dashboard/reservations'
+    adminReservationsPath(input.tenantSlug),
   )
 
   return { data, error: null }
@@ -132,7 +190,8 @@ export async function updateReservationStatus(
   organizationId: string,
   userId: string,
   status: 'confirmed' | 'cancelled' | 'completed' | 'no_show',
-  referenceCode: string
+  referenceCode: string,
+  tenantSlug?: string
 ) {
   const patch: Record<string, unknown> = { status }
   if (status === 'confirmed') patch.confirmed_at = new Date().toISOString()
@@ -158,7 +217,7 @@ export async function updateReservationStatus(
     userId,
     title: 'Actualización de reserva',
     body: `Tu reserva ${referenceCode} ha sido ${labels[status]}.`,
-    link: '/reservations',
+    link: tenantReservationsPath(tenantSlug),
   })
 
   return { error: null }
