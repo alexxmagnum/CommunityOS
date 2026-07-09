@@ -9,26 +9,31 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: project
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: project/package-lock.json
 
-      - run: npm ci
+      - name: Install dependencies
+        working-directory: project
+        run: npm ci
 
-      - run: npm run typecheck
+      - name: Typecheck
+        working-directory: project
+        run: npm run typecheck
 
-      - run: npm run test
+      - name: Test
+        working-directory: project
+        run: npm run test
 
-      - run: npm run build
+      - name: Build
+        working-directory: project
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
