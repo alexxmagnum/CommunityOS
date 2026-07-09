@@ -189,7 +189,7 @@ AND NOT EXISTS (
   SELECT 1 FROM activity_feed af
   WHERE af.organization_id = o.id AND af.title = a.title
 );
- -- Carta digital: lectura pÃºblica de menÃº para organizaciones activas
+ -- Carta digital: lectura pública de menú para organizaciones activas
 
 DROP POLICY IF EXISTS "menu_categories_public_read" ON menu_categories;
 CREATE POLICY "menu_categories_public_read" ON menu_categories FOR SELECT
@@ -417,7 +417,7 @@ BEGIN
   ) INTO conflict_exists;
 
   IF conflict_exists THEN
-    RAISE EXCEPTION 'Este horario ya no estÃ¡ disponible';
+    RAISE EXCEPTION 'Este horario ya no está disponible';
   END IF;
 
   RETURN NEW;
@@ -676,7 +676,7 @@ BEGIN
   SELECT org_uuid, a.name, a.display_name, a.description, a.icon, a.criteria::jsonb, a.points
   FROM (VALUES
     ('first_event', 'Primera experiencia', 'Te apuntaste a tu primer evento', 'star', '{"type":"event_join","count":1}', 10),
-    ('first_reservation', 'Primera reserva', 'Reservaste instalaciÃ³n o mesa', 'calendar', '{"type":"reservation","count":1}', 10),
+    ('first_reservation', 'Primera reserva', 'Reservaste instalación o mesa', 'calendar', '{"type":"reservation","count":1}', 10),
     ('tournament_player', 'Competidor', 'Participaste en un torneo', 'trophy', '{"type":"tournament","count":1}', 25),
     ('regular_member', 'Socio activo', '5 participaciones en el club', 'users', '{"type":"participation","count":5}', 50)
   ) AS a(name, display_name, description, icon, criteria, points)
@@ -717,17 +717,17 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM tournament_participants WHERE tournament_id = tournament_uuid) THEN
     INSERT INTO tournament_participants (organization_id, tournament_id, team_name, seed, status)
     VALUES
-      (org_uuid, tournament_uuid, 'Equipo GarcÃ­a', 1, 'registered'),
-      (org_uuid, tournament_uuid, 'Equipo LÃ³pez', 2, 'registered'),
-      (org_uuid, tournament_uuid, 'Equipo MartÃ­n', 3, 'registered'),
+      (org_uuid, tournament_uuid, 'Equipo García', 1, 'registered'),
+      (org_uuid, tournament_uuid, 'Equipo López', 2, 'registered'),
+      (org_uuid, tournament_uuid, 'Equipo Martín', 3, 'registered'),
       (org_uuid, tournament_uuid, 'Equipo Ruiz', 4, 'registered'),
       (org_uuid, tournament_uuid, 'Equipo Soto', 5, 'registered'),
       (org_uuid, tournament_uuid, 'Equipo Vega', 6, 'registered'),
       (org_uuid, tournament_uuid, 'Equipo Costa', 7, 'registered'),
-      (org_uuid, tournament_uuid, 'Equipo NÃºÃ±ez', 8, 'registered');
+      (org_uuid, tournament_uuid, 'Equipo Núñez', 8, 'registered');
   END IF;
 END $$;
- -- Fase 3: escala SaaS â€” analytics, friendships (future), Ã­ndices dominio
+ -- Fase 3: escala SaaS — analytics, friendships (future), índices dominio
 
 CREATE TABLE IF NOT EXISTS analytics_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -761,7 +761,7 @@ CREATE POLICY "org_admins_analytics_read" ON analytics_events
       WHERE om.organization_id = analytics_events.organization_id
         AND om.user_id = auth.uid()
         AND om.status = 'active'
-        AND r.name IN ('owner', 'admin')
+        AND r.name IN ('org_owner', 'org_admin')
     )
   );
 
@@ -792,7 +792,7 @@ CREATE POLICY "members_friendships_own" ON friendships
     requester_id = auth.uid() OR addressee_id = auth.uid()
   );
 
--- Ãndice dominio custom (organizations.domain ya existe)
+-- Índice dominio custom (organizations.domain ya existe)
 CREATE INDEX IF NOT EXISTS idx_organizations_domain_active
   ON organizations (domain) WHERE domain IS NOT NULL AND is_active = true;
 

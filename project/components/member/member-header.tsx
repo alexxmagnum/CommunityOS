@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useTenantOptional } from '@/contexts/TenantContext'
 import type { TenantOrg } from '@/lib/org/types'
 import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
-import { preferDarkChrome, isIkonTenant } from '@/lib/org/tenant-experience'
+import { preferDarkChrome } from '@/lib/org/tenant-experience'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationBell } from '@/components/member/notification-bell'
 import { Button } from '@/components/ui/button'
@@ -52,9 +52,8 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
   if (!org) return null
 
   const darkChrome = preferDarkChrome(org)
-  const isIkon = isIkonTenant(org)
   const transparent = variant === 'transparent'
-  const darkNav = isIkon || darkChrome || transparent
+  const darkNav = darkChrome || transparent
 
   const logoUrl = getTenantLogoUrl(org)
   const navItems = getTenantNavItems(org.modules)
@@ -66,16 +65,14 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
     ? `calc(${HEADER_BAR_HEIGHT} + ${DEMO_BANNER_HEIGHT})`
     : HEADER_BAR_HEIGHT
 
-  const headerClass = isIkon
+  const headerClass = darkNav
     ? cn(
         'fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black text-white transition-all duration-300',
         scrolled && 'header-scrolled',
       )
     : cn(
         'fixed inset-x-0 top-0 z-50 transition-colors',
-        darkNav
-          ? 'border-b border-white/10 bg-black text-white'
-          : 'border-b border-neutral-200/80 bg-white text-neutral-900',
+        'border-b border-neutral-200/80 bg-white text-neutral-900',
       )
 
   return (
@@ -96,7 +93,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
             <img
               src={logoUrl}
               alt={org.name}
-              className={cn('header-logo-img w-auto object-contain', isIkon ? '' : 'max-h-10')}
+              className={cn('header-logo-img w-auto object-contain', darkNav ? '' : 'max-h-10')}
               decoding="async"
             />
           ) : (
@@ -152,7 +149,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
                   variant="ghost"
                   className={cn(
                     'h-9 rounded-full px-5 text-sm font-medium',
-                    isIkon
+                    darkNav
                       ? 'border border-white/30 bg-transparent text-white/90 hover:border-white/50 hover:bg-white/5 hover:text-white'
                       : 'btn-motanos-outline',
                   )}
@@ -252,7 +249,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
                 <Button
                   className={cn(
                     'h-11 w-full justify-center rounded-full text-sm font-medium',
-                    isIkon
+                    darkNav
                       ? 'border border-white/30 bg-transparent text-white/90 hover:border-white/50 hover:bg-white/5 hover:text-white'
                       : 'btn-motanos-outline',
                   )}

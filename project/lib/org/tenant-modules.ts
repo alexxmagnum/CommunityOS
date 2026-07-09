@@ -60,3 +60,41 @@ export const TENANT_NAV: TenantNavItem[] = [
 export function getTenantNavItems(modules?: OrgModules | null): TenantNavItem[] {
   return TENANT_NAV.filter((item) => isModuleEnabled(modules, item.module))
 }
+
+export type AdminNavModule = OrgModuleKey | 'reservations' | 'venues'
+
+export interface AdminNavItemDef {
+  name: string
+  segment: string
+  /** Si se define, el ítem se muestra cuando alguno de estos módulos está activo. */
+  requiresModules?: OrgModuleKey[]
+}
+
+export const ADMIN_NAV_ITEMS: AdminNavItemDef[] = [
+  { name: 'Panel', segment: '' },
+  { name: 'Miembros', segment: 'members' },
+  { name: 'Eventos', segment: 'events', requiresModules: ['events'] },
+  { name: 'Torneos', segment: 'tournaments', requiresModules: ['tournaments'] },
+  { name: 'Reservas', segment: 'reservations', requiresModules: ['sports', 'restaurant'] },
+  { name: 'Restaurante', segment: 'restaurant', requiresModules: ['restaurant'] },
+  { name: 'Deportes', segment: 'sports', requiresModules: ['sports'] },
+  { name: 'Espacios', segment: 'venues', requiresModules: ['sports', 'restaurant'] },
+  { name: 'Medios', segment: 'media' },
+  { name: 'Marca', segment: 'branding' },
+  { name: 'Legal', segment: 'legal' },
+  { name: 'Facturación', segment: 'billing' },
+  { name: 'Integraciones', segment: 'integrations' },
+  { name: 'Ajustes', segment: 'settings' },
+]
+
+export function isAdminNavItemVisible(
+  item: AdminNavItemDef,
+  modules?: OrgModules | null,
+): boolean {
+  if (!item.requiresModules?.length) return true
+  return item.requiresModules.some((key) => isModuleEnabled(modules, key))
+}
+
+export function getAdminNavItems(modules?: OrgModules | null): AdminNavItemDef[] {
+  return ADMIN_NAV_ITEMS.filter((item) => isAdminNavItemVisible(item, modules))
+}

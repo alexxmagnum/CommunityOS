@@ -11,6 +11,7 @@ import { TenantProvider } from '@/contexts/TenantContext'
 import { OrgThemeProvider } from '@/components/member/org-theme-provider'
 import { TenantAuthSync } from '@/components/member/tenant-auth-sync'
 import { TenantSplash } from '@/components/member/tenant-splash'
+import { TenantHead } from '@/components/member/tenant-head'
 import type { TenantHomeData } from '@/lib/org/types'
 
 function demoTenantData(slug: string): TenantHomeData | null {
@@ -67,6 +68,7 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
         </div>
       ) : (
         <TenantProvider key={`${slug}:${JSON.stringify(data.org.modules ?? {})}`} slug={slug} data={data}>
+          <TenantHead org={data.org} slug={slug} />
           <TenantAuthSync organizationId={data.org.id} />
           <TenantSplash />
           <OrgThemeProvider org={data.org}>{children}</OrgThemeProvider>

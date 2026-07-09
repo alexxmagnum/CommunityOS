@@ -391,6 +391,31 @@ GRANT EXECUTE ON FUNCTION public.get_invitation_public(text) TO anon, authentica
 
 
 -- =============================================================================
+-- 6b) Dominio custom → slug (middleware)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION public.get_slug_by_domain(p_domain text)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT o.slug
+  FROM organizations o
+  WHERE o.is_active = true
+    AND o.domain IS NOT NULL
+    AND lower(trim(o.domain)) = lower(trim(p_domain))
+  LIMIT 1;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_slug_by_domain(text) TO anon, authenticated;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_domain_unique
+  ON organizations (lower(trim(domain)))
+  WHERE domain IS NOT NULL AND is_active = true;
+
+
+-- =============================================================================
 -- 7) (OPCIONAL) SEED ADMIN — descomenta y cambia el email para asignar dueño
 --
 --    ⚠️ Cambia 'alexxstazy@gmail.com' por el email real antes de ejecutar.

@@ -1,4 +1,5 @@
 import { DEMO_HOST_TO_SLUG } from './demo-tenants'
+import { parseHostname } from './normalize-domain'
 
 const PLATFORM_PATH_PREFIXES = [
   '/auth',
@@ -20,11 +21,10 @@ export function isPlatformPath(pathname: string): boolean {
   return PLATFORM_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
-/** Resuelve slug desde hostname (demo / dev). Producción: organizations.domain vía DB en edge. */
+/** Resuelve slug desde hostname (solo mapa demo / dev). Producción: `resolveSlugFromHostWithDb`. */
 export function resolveSlugFromHost(host: string | null): string | null {
-  if (!host) return null
-  const hostname = host.split(':')[0].toLowerCase()
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return null
+  const hostname = parseHostname(host)
+  if (!hostname) return null
   return DEMO_HOST_TO_SLUG[hostname] ?? null
 }
 

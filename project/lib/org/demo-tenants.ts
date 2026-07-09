@@ -12,7 +12,6 @@ import {
   MARINA_TENANT,
 } from './demo-tenant-marina'
 import type { TenantHomeData } from './types'
-import { withIkonPreset } from './tenant-experience'
 
 export interface DemoTenantPack {
   org: typeof DEMO_TENANT
@@ -71,11 +70,11 @@ export function buildDemoTenantHome(slug: string): TenantHomeData | null {
   if (!pack) return null
 
   return {
-    org: withIkonPreset({
+    org: {
       ...pack.org,
       slug,
       hero_image_url: pack.heroImage,
-    }),
+    },
     events: pack.events,
     facilities: pack.facilities,
     activities: pack.activities,

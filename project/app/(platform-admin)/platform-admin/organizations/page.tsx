@@ -51,6 +51,9 @@ import { tenantPath } from '@/lib/org/tenant-path'
 import Link from 'next/link'
 import { labelTier } from '@/lib/i18n/es'
 import { modulesForDatabase } from '@/lib/org/tenant-modules'
+import { normalizeCustomDomain } from '@/lib/org/normalize-domain'
+import { invalidateDomainCache } from '@/lib/org/resolve-domain-slug'
+import { DomainDnsHelp } from '@/components/platform/domain-dns-help'
 
 const MODULE_KEYS = ['restaurant', 'sports', 'events', 'tournaments'] as const
 
@@ -177,12 +180,13 @@ export default function OrganizationsPage() {
         setCreating(false)
         return
       }
+      const domain = normalizeCustomDomain(newOrg.domain)
       const { data: created, error } = await supabase
         .from('organizations')
         .insert({
           name: newOrg.name,
           slug,
-          domain: newOrg.domain || null,
+          domain,
           subscription_tier: newOrg.subscription_tier,
           modules: { restaurant: true, sports: true, events: true, tournaments: true },
         })
@@ -219,6 +223,8 @@ export default function OrganizationsPage() {
           })
         }
       }
+
+      if (domain) invalidateDomainCache(domain)
 
       toast.success('Organización creada con plantilla aplicada')
       setCreateOpen(false)
@@ -257,14 +263,16 @@ export default function OrganizationsPage() {
     if (!editingOrg) return
     setSavingEdit(true)
     try {
+      const domain = normalizeCustomDomain(editingOrg.domain ?? '')
       const { error } = await supabase.from('organizations').update({
         name: editingOrg.name,
         subscription_tier: editingOrg.subscription_tier,
         modules: modulesForDatabase(editingOrg.modules),
-        domain: editingOrg.domain,
+        domain,
         is_active: editingOrg.is_active,
       }).eq('id', editingOrg.id)
       if (error) throw error
+      if (domain) invalidateDomainCache(domain)
       toast.success('Organización actualizada')
       setEditOpen(false)
       loadOrganizations()
@@ -350,6 +358,7 @@ export default function OrganizationsPage() {
                   value={newOrg.domain}
                   onChange={(e) => setNewOrg(prev => ({ ...prev, domain: e.target.value }))}
                 />
+                <DomainDnsHelp domain={newOrg.domain} slug={slugify(newOrg.slug || newOrg.name) || 'slug'} />
               </div>
               <div className="space-y-2">
                 <Label>Plantilla de marca</Label>
@@ -425,6 +434,15 @@ export default function OrganizationsPage() {
                 <div className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <span className="text-sm">Activo</span>
                   <Switch checked={editingOrg.is_active} onCheckedChange={(v) => setEditingOrg({ ...editingOrg, is_active: v })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Dominio personalizado</Label>
+                  <Input
+                    placeholder="club.ejemplo.com"
+                    value={editingOrg.domain ?? ''}
+                    onChange={(e) => setEditingOrg({ ...editingOrg, domain: e.target.value })}
+                  />
+                  <DomainDnsHelp domain={editingOrg.domain ?? ''} slug={editingOrg.slug} />
                 </div>
                 <Link href={tenantPath(editingOrg.slug)} target="_blank" className="inline-flex items-center text-sm text-blue-600 hover:underline">
                   <ExternalLink className="mr-1.5 h-4 w-4" /> Ver app de la organización

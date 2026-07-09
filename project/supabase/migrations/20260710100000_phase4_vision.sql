@@ -34,7 +34,7 @@ CREATE POLICY "org_admins_payments_read" ON payments
       WHERE om.organization_id = payments.organization_id
         AND om.user_id = auth.uid()
         AND om.status = 'active'
-        AND r.name IN ('owner', 'admin', 'org_owner', 'org_admin')
+        AND r.name IN ('org_owner', 'org_admin')
     )
   );
 

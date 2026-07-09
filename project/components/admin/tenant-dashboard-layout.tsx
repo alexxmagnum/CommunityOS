@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   LayoutDashboard,
@@ -24,6 +24,7 @@ import {
   FileText,
   CreditCard,
   Plug,
+  type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -31,25 +32,30 @@ import { labelRole } from '@/lib/i18n/es'
 import { tenantDashboardPath, tenantPath, tenantAdminLoginUrl } from '@/lib/org/tenant-path'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { TenantDashboardSync } from '@/components/admin/tenant-dashboard-sync'
+import { getAdminNavItems, parseOrgModules, type OrgModules } from '@/lib/org/tenant-modules'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
-function buildNavigation(slug: string) {
-  return [
-    { name: 'Panel', segment: '', icon: LayoutDashboard },
-    { name: 'Miembros', segment: 'members', icon: Users },
-    { name: 'Eventos', segment: 'events', icon: Calendar },
-    { name: 'Torneos', segment: 'tournaments', icon: Trophy },
-    { name: 'Reservas', segment: 'reservations', icon: CalendarCheck },
-    { name: 'Restaurante', segment: 'restaurant', icon: Utensils },
-    { name: 'Deportes', segment: 'sports', icon: Flag },
-    { name: 'Espacios', segment: 'venues', icon: MapPin },
-    { name: 'Medios', segment: 'media', icon: ImageIcon },
-    { name: 'Marca', segment: 'branding', icon: Palette },
-    { name: 'Legal', segment: 'legal', icon: FileText },
-    { name: 'Facturación', segment: 'billing', icon: CreditCard },
-    { name: 'Integraciones', segment: 'integrations', icon: Plug },
-    { name: 'Ajustes', segment: 'settings', icon: Settings },
-  ].map((item) => ({
+const ADMIN_NAV_ICONS: Record<string, LucideIcon> = {
+  '': LayoutDashboard,
+  members: Users,
+  events: Calendar,
+  tournaments: Trophy,
+  reservations: CalendarCheck,
+  restaurant: Utensils,
+  sports: Flag,
+  venues: MapPin,
+  media: ImageIcon,
+  branding: Palette,
+  legal: FileText,
+  billing: CreditCard,
+  integrations: Plug,
+  settings: Settings,
+}
+
+function buildNavigation(slug: string, modules?: OrgModules | null) {
+  return getAdminNavItems(modules).map((item) => ({
     ...item,
+    icon: ADMIN_NAV_ICONS[item.segment] ?? LayoutDashboard,
     href: tenantDashboardPath(slug, item.segment),
   }))
 }
@@ -63,11 +69,26 @@ export function TenantDashboardLayout({
 }) {
   const { user, activeOrganization, loading, signOut, isOrgAdminOf, profile } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [modules, setModules] = useState<OrgModules | null>(null)
   const pathname = usePathname()
-  const navigation = buildNavigation(slug)
 
   const orgMatchesSlug = activeOrganization?.organization?.slug === slug
   const canAccess = user && orgMatchesSlug && isOrgAdminOf(activeOrganization.organization_id)
+
+  useEffect(() => {
+    if (!canAccess || !activeOrganization?.organization_id) return
+    const supabase = getSupabaseClient()
+    void supabase
+      .from('organizations')
+      .select('modules')
+      .eq('id', activeOrganization.organization_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setModules(parseOrgModules(data?.modules))
+      })
+  }, [canAccess, activeOrganization?.organization_id])
+
+  const navigation = buildNavigation(slug, modules)
 
   if (loading || !canAccess) {
     return (

@@ -1,15 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { getGolfSplashCopy } from '@/lib/org/tenant-experience'
+import type { TenantOrg } from '@/lib/org/types'
 import { bindGolfHitAudio, playGolfHitSound, unlockSplashAudio } from '@/lib/splash/golf-hit-sound'
 import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
 
-const LETTERS = ['I', 'K', 'O', 'N'] as const
-const LINE2 = IKON_BRAND.logoLine2.toUpperCase()
-const LINE3 = IKON_BRAND.logoLine3.toUpperCase()
 const TYPE_MS = 48
 const SPREAD_MS = 900
 const STAGGER_MS = 90
@@ -79,7 +77,8 @@ function preloadImages(sources: string[]) {
   )
 }
 
-export function IkonSplash() {
+export function GolfSplash({ org }: { org: TenantOrg }) {
+  const { letters: LETTERS, line2: LINE2, line3: LINE3 } = getGolfSplashCopy(org)
   const blockRef = useRef<HTMLDivElement>(null)
   const wordRef = useRef<HTMLDivElement>(null)
   const letterRefs = useRef<(HTMLSpanElement | null)[]>([])
@@ -393,4 +392,9 @@ export function IkonSplash() {
       )}
     </div>
   )
+}
+
+/** @deprecated Usa GolfSplash */
+export function IkonSplash({ org }: { org: TenantOrg }) {
+  return <GolfSplash org={org} />
 }

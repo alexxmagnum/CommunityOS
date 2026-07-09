@@ -1,5 +1,6 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { rewritePathForCustomDomain, resolveSlugFromHost } from '@/lib/org/resolve-host-tenant'
+import { rewritePathForCustomDomain } from '@/lib/org/resolve-host-tenant'
+import { resolveSlugFromHostWithDb } from '@/lib/org/resolve-domain-slug'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const slug = resolveSlugFromHost(request.headers.get('host'))
+  const slug = await resolveSlugFromHostWithDb(request.headers.get('host'))
   if (slug) {
     const rewritten = rewritePathForCustomDomain(request.nextUrl.pathname, slug)
     if (rewritten) {

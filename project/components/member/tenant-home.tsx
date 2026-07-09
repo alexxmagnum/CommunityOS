@@ -10,10 +10,10 @@ import { loadMemberProfile } from '@/lib/community/load-member-profile'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate, formatRelativeTime } from '@/lib/format/dates'
 import { MemberHeader } from '@/components/member/member-header'
-import { IkonHero } from '@/components/member/ikon-hero'
+import { TenantCinematicHero } from '@/components/member/tenant-cinematic-hero'
 import { TenantHero } from '@/components/member/tenant-hero'
 import { TenantFooter } from '@/components/member/tenant-footer'
-import { usesCinematicHero, isIkonTenant } from '@/lib/org/tenant-experience'
+import { usesCinematicHero } from '@/lib/org/tenant-experience'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
 import { EmptySection } from '@/components/member/empty-section'
 import { ForYouSection } from '@/components/member/for-you-section'
@@ -24,7 +24,6 @@ export function TenantHomePage() {
   const { org, events, facilities, activities, stats, demoMode, path } = useTenant()
   const { user } = useAuth()
   const cinematicHero = usesCinematicHero(org)
-  const isIkon = isIkonTenant(org)
   const showSports = isModuleEnabled(org.modules, 'sports')
   const showRestaurant = isModuleEnabled(org.modules, 'restaurant')
   const showEvents = isModuleEnabled(org.modules, 'events')
@@ -58,18 +57,19 @@ export function TenantHomePage() {
         <MemberHeader variant="transparent" hideDemoBanner />
 
         {cinematicHero ? (
-          <IkonHero
+          <TenantCinematicHero
             org={org}
             featured={featured}
             demoMode={demoMode}
             golfFacilityId={golfFacility?.id}
+            facilities={facilities}
             path={path}
           />
         ) : (
           <TenantHero org={org} featured={featured} path={path} />
         )}
 
-        {demoMode && isIkon && (
+        {demoMode && org.slug === 'ikon' && (
           <Link
             href="/setup"
             className="absolute bottom-8 left-6 z-20 hidden rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] text-white/55 backdrop-blur-md hover:text-white/80 lg:inline-flex"

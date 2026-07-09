@@ -7,7 +7,6 @@ import {
   mergeTenantBranding,
   parseBrandingExperience,
   parseBrandingHero,
-  withIkonPreset,
 } from './tenant-experience'
 import {
   localizeActivity,
@@ -89,7 +88,7 @@ async function loadOrgBySlug(slug: string): Promise<TenantOrg | null> {
     const raw = typeof rpcOrg === 'string' ? JSON.parse(rpcOrg) : rpcOrg
     const modules = parseOrgModules((raw as Record<string, unknown>).modules)
     const branding = await loadTenantBranding(raw.id as string)
-    return withIkonPreset({
+    return {
       id: raw.id as string,
       name: raw.name as string,
       slug: raw.slug as string,
@@ -104,7 +103,7 @@ async function loadOrgBySlug(slug: string): Promise<TenantOrg | null> {
       hero_image_url: branding?.hero_image_url ?? undefined,
       hero_tagline: branding?.hero_tagline ?? undefined,
       branding,
-    })
+    }
   }
 
   const { data, error } = await supabase
@@ -119,13 +118,13 @@ async function loadOrgBySlug(slug: string): Promise<TenantOrg | null> {
 
   const modules = parseOrgModules(data.modules)
   const branding = await loadTenantBranding(data.id)
-  return withIkonPreset({
+  return {
     ...data,
     modules: modules ?? undefined,
     hero_image_url: branding?.hero_image_url ?? undefined,
     hero_tagline: branding?.hero_tagline ?? undefined,
     branding,
-  })
+  }
 }
 
 export async function loadTenantHome(
@@ -166,7 +165,7 @@ export async function loadTenantHome(
     )
 
     return {
-      org: withIkonPreset({ ...org, city: venueRes.data?.city ?? undefined }),
+      org: { ...org, city: venueRes.data?.city ?? undefined },
       events: (eventsRes.data ?? []).map((e) => localizeEvent(locale, e)),
       facilities: (facilitiesRes.data ?? []).map((f) =>
         localizeFacility(locale, {
@@ -191,7 +190,7 @@ export async function loadTenantHome(
       if (org) {
         return {
           ...emptyTenantHome(slug, org.name, org.modules),
-          org: withIkonPreset(org),
+          org,
           demoMode: false,
         }
       }
