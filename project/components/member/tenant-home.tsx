@@ -13,15 +13,21 @@ import { MemberHeader } from '@/components/member/member-header'
 import { IkonHero } from '@/components/member/ikon-hero'
 import { TenantHero } from '@/components/member/tenant-hero'
 import { TenantFooter } from '@/components/member/tenant-footer'
+import { usesCinematicHero, isIkonTenant } from '@/lib/org/tenant-experience'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
 import { EmptySection } from '@/components/member/empty-section'
 import { ForYouSection } from '@/components/member/for-you-section'
+import { isModuleEnabled } from '@/lib/org/tenant-modules'
 import { Calendar, Clock, Flag, MapPin, Users, UtensilsCrossed } from 'lucide-react'
 
 export function TenantHomePage() {
   const { org, events, facilities, activities, stats, demoMode, path } = useTenant()
   const { user } = useAuth()
-  const isIkon = org.slug === 'ikon'
+  const cinematicHero = usesCinematicHero(org)
+  const isIkon = isIkonTenant(org)
+  const showSports = isModuleEnabled(org.modules, 'sports')
+  const showRestaurant = isModuleEnabled(org.modules, 'restaurant')
+  const showEvents = isModuleEnabled(org.modules, 'events')
   const [forYouPrompts, setForYouPrompts] = useState<ReturnType<typeof generateDiscoveryPrompts>>([])
 
   const prompts = generateDiscoveryPrompts(events, facilities, demoMode).map((p) => ({
@@ -51,8 +57,9 @@ export function TenantHomePage() {
       <div className="relative bg-ink">
         <MemberHeader variant="transparent" hideDemoBanner />
 
-        {isIkon ? (
+        {cinematicHero ? (
           <IkonHero
+            org={org}
             featured={featured}
             demoMode={demoMode}
             golfFacilityId={golfFacility?.id}
@@ -84,8 +91,9 @@ export function TenantHomePage() {
             </h2>
           </div>
 
+          {(showSports || showRestaurant) && (
           <div className="grid gap-5 lg:grid-cols-12">
-            {golfFacility && (
+            {showSports && golfFacility && (
               <Link
                 href={path(`/reservations?facility=${golfFacility.id}`)}
                 className="group relative min-h-[320px] overflow-hidden rounded-3xl lg:col-span-7"
@@ -109,6 +117,7 @@ export function TenantHomePage() {
               </Link>
             )}
 
+            {showRestaurant && (
             <div className="flex flex-col gap-5 lg:col-span-5">
               <Link href={path('/carta')} className="group relative flex-1 overflow-hidden rounded-3xl">
                 <img
@@ -132,9 +141,11 @@ export function TenantHomePage() {
                 <span className="text-sm font-medium text-motanos">→</span>
               </Link>
             </div>
+            )}
           </div>
+          )}
 
-          {facilities.filter((f) => f.sport?.name !== 'golf').length > 0 && (
+          {showSports && facilities.filter((f) => f.sport?.name !== 'golf').length > 0 && (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {facilities.filter((f) => f.sport?.name !== 'golf').map((f) => (
                 <Link
@@ -156,6 +167,7 @@ export function TenantHomePage() {
           )}
         </section>
 
+        {showEvents && (
         <section>
           <div className="mb-10 flex items-end justify-between gap-4">
             <div>
@@ -212,6 +224,7 @@ export function TenantHomePage() {
             ))}
           </div>
         </section>
+        )}
 
         <section className="grid gap-12 lg:grid-cols-5">
           <div className="lg:col-span-3">

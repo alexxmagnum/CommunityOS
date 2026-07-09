@@ -1,33 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
-import type { TenantEvent } from '@/lib/org/types'
+import { getCinematicHeroCopy, getHeroHighlights, getHeroStats, isIkonTenant } from '@/lib/org/tenant-experience'
+import type { TenantEvent, TenantOrg } from '@/lib/org/types'
 import { HeroBackground, HERO_IMAGE_MOBILE } from '@/components/member/hero-background'
 import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const INDICATORS = [
-  '18 Hoyos',
-  'Driving Range',
-  'Restaurante',
+const GLASS_FEATURES_FALLBACK = [
+  'Instalaciones',
   'Eventos',
-  'Academia',
-] as const
-
-const STATS = [
-  { value: '500+', label: 'Socios' },
-  { value: '18', label: 'Hoyos' },
-  { value: '365', label: 'Días abierto' },
-  { value: '4.9★', label: 'Valoración' },
-] as const
-
-const GLASS_FEATURES = [
-  '18 hoyos',
-  'Driving range',
   'Restaurante',
-  'Sports lounge',
-  'Eventos',
+  'Comunidad',
 ] as const
 
 function formatEventCardDate(iso: string) {
@@ -39,25 +23,30 @@ function formatEventCardDate(iso: string) {
 }
 
 function HeroGlassCard({
+  org,
   featured,
   eventDate,
   eventHref,
   className,
+  glassFeatures,
 }: {
+  org: TenantOrg
   featured?: TenantEvent | null
   eventDate: ReturnType<typeof formatEventCardDate> | null
   eventHref: string
   className?: string
+  glassFeatures: string[]
 }) {
+  const displayName = org.slug === 'ikon' ? 'IKON' : org.name
   return (
     <div className={className ?? 'hero-glass-card w-full max-w-[280px] lg:w-[260px] lg:max-w-none'}>
       <div className="text-center">
-        <p className="font-display text-lg tracking-wide text-white">IKON</p>
+        <p className="font-display text-lg tracking-wide text-white">{displayName}</p>
         <p className="mt-0.5 text-[9px] uppercase tracking-[0.32em] text-white/55">Club privado</p>
       </div>
       <div className="my-3 h-px bg-white/10" />
       <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[8px] font-medium uppercase tracking-[0.12em] text-white/60">
-        {GLASS_FEATURES.map((item) => (
+        {glassFeatures.slice(0, 6).map((item) => (
           <p key={item}>{item}</p>
         ))}
       </div>
@@ -129,21 +118,25 @@ function HeroEventTeaser({
 function HeroFooter({
   className,
   variant = 'full',
+  indicators,
+  stats,
 }: {
   className?: string
   variant?: 'full' | 'stats'
+  indicators: string[]
+  stats: { value: string; label: string }[]
 }) {
   return (
     <div className={className}>
-      {variant === 'full' && (
+      {variant === 'full' && indicators.length > 0 && (
         <div className="hero-indicators-track overflow-x-auto pb-1">
           <p className="hero-fade hero-fade-5 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.18em] text-white/65">
-            {INDICATORS.join('  ·  ')}
+            {indicators.join('  ·  ')}
           </p>
         </div>
       )}
       <div className={`hero-fade hero-fade-6 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-8 ${variant === 'full' ? 'mt-5' : ''}`}>
-        {STATS.map(({ value, label }) => (
+        {stats.map(({ value, label }) => (
           <div key={label}>
             <p className="font-display text-xl text-white lg:text-3xl">{value}</p>
             <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/45">{label}</p>
@@ -153,7 +146,7 @@ function HeroFooter({
       {variant === 'full' && (
         <div className="hero-scroll-indicator hero-fade hero-fade-8 pointer-events-none mt-6 hidden text-center lg:block">
           <p className="hero-scroll-arrow text-lg text-white/50">↓</p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.35em] text-white/40">Scroll</p>
+          <p className="mt-1 text-[10px] uppercase tracking-[0.35em] text-white/40">Bajar</p>
         </div>
       )}
     </div>
@@ -161,13 +154,20 @@ function HeroFooter({
 }
 
 type IkonHeroProps = {
+  org: TenantOrg
   featured?: TenantEvent | null
   demoMode: boolean
   golfFacilityId?: string
   path: (segment?: string) => string
 }
 
-export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroProps) {
+export function IkonHero({ org, featured, demoMode, golfFacilityId, path }: IkonHeroProps) {
+  const copy = getCinematicHeroCopy(org)
+  const highlights = getHeroHighlights(org)
+  const stats = getHeroStats(org)
+  const glassFeatures =
+    highlights.length > 0 ? highlights : [...GLASS_FEATURES_FALLBACK]
+  const isIkon = isIkonTenant(org)
   const teeHref = path(golfFacilityId ? `/reservations?facility=${golfFacilityId}` : '/reservations?sport=golf')
   const eventHref = featured && !demoMode ? path(`/events/${featured.id}`) : path('/events')
   const eventDate = featured ? formatEventCardDate(featured.starts_at) : null
@@ -178,7 +178,7 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="hero-shell relative bg-black">
             <div className="hero-media relative hidden overflow-hidden lg:block lg:overflow-visible">
-              <HeroBackground className="hero-image-natural" />
+              <HeroBackground className="hero-image-natural" preferredImage={copy.heroImage ?? undefined} />
               <div className="scrim-hero pointer-events-none absolute inset-0" aria-hidden />
             </div>
 
@@ -193,11 +193,11 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
                     <div className="hero-eyebrow-anchor absolute inset-x-0 z-10 flex justify-center lg:justify-start">
                       <div className="hero-eyebrow-wrap hero-fade hero-fade-1">
                         <p className="hero-eyebrow-kicker text-motanos">
-                          {IKON_BRAND.heroEyebrowKicker}
+                          {copy.eyebrowKicker}
                         </p>
                         <div className="hero-eyebrow-subwrap">
                           <p className="hero-eyebrow text-white/70 lg:text-white/85">
-                            {IKON_BRAND.heroEyebrow}
+                            {copy.eyebrow}
                           </p>
                           <div className="hero-eyebrow-line" aria-hidden />
                         </div>
@@ -207,28 +207,49 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
                     <div className="hero-main-copy pt-[6.5rem] lg:pt-[7.5rem]">
                     <h1 className="hero-title font-display hero-fade hero-fade-2 mt-4 text-white lg:mt-10">
                       <span className="lg:hidden">
-                        <span className="block">Un estilo de vida.</span>
-                        <span className="block">Una pasión eterna.</span>
+                        {isIkon ? (
+                          <>
+                            <span className="block">Un estilo de vida.</span>
+                            <span className="block">Una pasión eterna.</span>
+                          </>
+                        ) : (
+                          (copy.titleMobile || copy.titleLines.slice(0, 2).join(' '))
+                            .split('. ')
+                            .map((part, i) => (
+                              <span key={i} className="block">
+                                {part}
+                                {part.endsWith('.') ? '' : '.'}
+                              </span>
+                            ))
+                        )}
                       </span>
                       <span className="hidden lg:contents">
-                        <span className="block">{IKON_BRAND.heroTitleLine1}</span>
-                        <span className="block">{IKON_BRAND.heroTitleLine2}</span>
-                        <span className="mt-1 block lg:mt-2">{IKON_BRAND.heroTitleLine3}</span>
-                        <span className="block">{IKON_BRAND.heroTitleLine4}</span>
+                        {copy.titleLines.map((line, index) => (
+                          <span
+                            key={`${line}-${index}`}
+                            className={cn('block', index === 2 && 'mt-1 lg:mt-2')}
+                          >
+                            {line}
+                          </span>
+                        ))}
                       </span>
                     </h1>
 
                     <div className="hero-media hero-media-inline relative mt-7 overflow-hidden lg:hidden">
-                      <HeroBackground className="hero-image-mobile" image={HERO_IMAGE_MOBILE} />
+                      <HeroBackground
+                        className="hero-image-mobile"
+                        image={HERO_IMAGE_MOBILE}
+                        preferredImage={copy.heroImage ?? undefined}
+                      />
                     </div>
 
                     <p className="hero-subtitle hero-fade hero-fade-3 mt-6 max-w-md font-sans text-[17px] font-extralight leading-[1.75] tracking-[0.03em] text-white/55 lg:mt-10 lg:max-w-lg lg:text-[20px] lg:leading-[1.8] lg:text-white/70">
-                      {IKON_BRAND.heroSubtitle}
+                      {copy.subtitle}
                     </p>
 
                     <div className="hero-cta-mobile hero-fade hero-fade-4 mt-4 flex flex-row items-stretch gap-2.5 lg:hidden">
                       <Link href={teeHref} className="btn-hero-cta-fill min-w-0 flex-1 justify-center px-3 text-center">
-                        Reservar tee time
+                        Reservar salida
                       </Link>
                       <Link href={path('/events')} className="btn-hero-cta-outline min-w-0 flex-1 justify-center gap-1 px-3 text-center">
                         Conocer el club
@@ -247,7 +268,7 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
 
                     <div className="hero-cta-desktop hero-fade hero-fade-4 mt-4 hidden flex-row items-center gap-3 lg:flex">
                       <Link href={teeHref} className="btn-hero-cta-fill justify-center lg:w-auto">
-                        Reservar tee time
+                        Reservar salida
                       </Link>
                       <Link href={path('/events')} className="btn-hero-cta-outline gap-2">
                         Conocer el club
@@ -260,19 +281,29 @@ export function IkonHero({ featured, demoMode, golfFacilityId, path }: IkonHeroP
 
                 <div className="relative hidden flex-1 lg:block">
                   <div className="absolute bottom-8 right-0">
-                    <HeroGlassCard featured={featured} eventDate={eventDate} eventHref={eventHref} />
+                    <HeroGlassCard
+                      org={org}
+                      featured={featured}
+                      eventDate={eventDate}
+                      eventHref={eventHref}
+                      glassFeatures={glassFeatures}
+                    />
                   </div>
                 </div>
               </div>
 
-              <HeroFooter className="hero-footer-scrim mt-auto hidden border-t border-white/15 py-6 lg:block lg:py-7" />
+              <HeroFooter
+                className="hero-footer-scrim mt-auto hidden border-t border-white/15 py-6 lg:block lg:py-7"
+                indicators={highlights}
+                stats={stats}
+              />
             </div>
           </div>
         </div>
       </section>
 
       <div className="hero-mobile-extras mx-auto max-w-7xl bg-black px-6 pb-10 pt-8 lg:hidden">
-        <HeroFooter variant="stats" className="border-t border-white/10 pt-8" />
+        <HeroFooter variant="stats" className="border-t border-white/10 pt-8" indicators={highlights} stats={stats} />
       </div>
     </>
   )

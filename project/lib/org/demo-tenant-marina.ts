@@ -1,23 +1,30 @@
 import type { TenantActivity, TenantEvent, TenantFacility, TenantOrg } from './types'
+import { getBrandTemplate } from './brand-templates'
 
-/** Segundo tenant demo — Marina Beach Club (validar white-label) */
+const coastal = getBrandTemplate('coastal')!
+
+/** Segundo tenant demo — Marina Beach Club (plantilla Coastal Premium, sin código manual). */
 export const MARINA_TENANT: TenantOrg = {
   id: 'demo-marina',
   name: 'Marina Beach Club',
   slug: 'marina',
   logo_url: null,
-  primary_color: '#0a2540',
-  secondary_color: '#0d3b66',
-  accent_color: '#2ec4b6',
-  font_family: 'Playfair Display',
-  theme_mode: 'dark',
+  primary_color: coastal.org.primary_color,
+  secondary_color: coastal.org.secondary_color,
+  accent_color: coastal.org.accent_color,
+  font_family: coastal.org.font_family,
+  theme_mode: coastal.org.theme_mode,
   city: 'Valencia',
-  hero_image_url:
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90',
-  hero_tagline: 'Sol, mar y experiencias frente al Mediterráneo.',
+  hero_image_url: coastal.hero.hero_image_url,
+  hero_tagline: coastal.hero.hero_tagline,
   locale: 'es-ES',
   currency: 'EUR',
   custom_domain: 'marina.localhost',
+  branding: {
+    ...coastal.experience,
+    hero_image_url: coastal.hero.hero_image_url,
+    hero_tagline: coastal.hero.hero_tagline,
+  },
 }
 
 export const MARINA_EVENTS: TenantEvent[] = [

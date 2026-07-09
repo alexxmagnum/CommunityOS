@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { TenantOrg } from '@/lib/org/types'
-import { resolveOrgTheme } from '@/lib/org/resolve-theme'
+import { resolveTenantTheme } from '@/lib/org/resolve-theme'
 import { cn } from '@/lib/utils'
 
 const GOOGLE_FONTS = new Set([
@@ -14,20 +14,6 @@ const GOOGLE_FONTS = new Set([
   'Playfair Display',
   'Instrument Serif',
 ])
-
-function useSystemDark() {
-  const [systemDark, setSystemDark] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    setSystemDark(mq.matches)
-    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-
-  return systemDark
-}
 
 function useTenantFont(fontFamily?: string) {
   useEffect(() => {
@@ -44,18 +30,15 @@ function useTenantFont(fontFamily?: string) {
 }
 
 export function OrgThemeProvider({ org, children }: { org: TenantOrg; children: React.ReactNode }) {
-  const systemDark = useSystemDark()
   useTenantFont(org.font_family)
 
-  const style = resolveOrgTheme(org)
-  const isDark =
-    org.theme_mode === 'dark' || (org.theme_mode === 'system' && systemDark)
+  const { style, isDark } = resolveTenantTheme(org)
 
   return (
     <div
       style={style}
       className={cn(
-        'tenant-theme min-h-screen font-sans bg-[var(--org-surface,hsl(var(--background)))] text-[hsl(var(--foreground))]',
+        'tenant-theme min-h-screen font-sans bg-[hsl(var(--background))] text-[hsl(var(--foreground))]',
         isDark && 'dark'
       )}
       data-tenant={org.slug}

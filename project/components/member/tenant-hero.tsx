@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { TenantEvent, TenantOrg } from '@/lib/org/types'
+import { getCinematicHeroCopy } from '@/lib/org/tenant-experience'
 import { formatEventDate } from '@/lib/format/dates'
 
 interface TenantHeroProps {
@@ -19,9 +20,14 @@ function todayLabel() {
 }
 
 export function TenantHero({ org, featured, path }: TenantHeroProps) {
+  const copy = getCinematicHeroCopy(org)
   const heroImage =
     org.hero_image_url ??
+    copy.heroImage ??
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=2400&q=80'
+
+  const titleLines = copy.titleLines
+  const hasCustomTitle = titleLines.length > 0 && titleLines[0] !== `Bienvenido a ${org.name}`
 
   return (
     <section className="relative min-h-[72vh] overflow-hidden">
@@ -32,16 +38,26 @@ export function TenantHero({ org, featured, path }: TenantHeroProps) {
       <div className="scrim-hero absolute inset-0" />
       <div className="relative mx-auto flex min-h-[72vh] max-w-7xl flex-col justify-center px-6 py-24 lg:px-10">
         <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-white/50">
-          {org.city ? `${org.city} · ` : ''}
-          {todayLabel()}
+          {copy.eyebrowKicker || org.city || ''}
+          {copy.eyebrowKicker && copy.eyebrow ? ' · ' : ''}
+          {copy.eyebrow || todayLabel()}
         </p>
-        <h1 className="font-display mt-4 max-w-[14ch] text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] text-white">
-          Bienvenido
-          <br />a {org.name}
+        <h1 className="font-display mt-4 max-w-[16ch] text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] text-white">
+          {hasCustomTitle ? (
+            titleLines.map((line, i) => (
+              <span key={i} className="block">
+                {line}
+              </span>
+            ))
+          ) : (
+            <>
+              Bienvenido
+              <br />a {org.name}
+            </>
+          )}
         </h1>
         <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 md:text-lg">
-          {org.hero_tagline ??
-            'Experiencias, deporte y gastronomía en un club diseñado para disfrutar cada momento.'}
+          {copy.subtitle}
         </p>
         {featured && (
           <p className="mt-4 text-sm text-white/55">

@@ -15,6 +15,22 @@ export interface TenantOrg {
   locale?: string
   currency?: string
   custom_domain?: string | null
+  modules?: import('./tenant-modules').OrgModules
+  branding?: TenantBranding
+}
+
+export interface TenantBranding {
+  hero_style?: 'standard' | 'cinematic'
+  splash_style?: 'none' | 'reveal' | 'golf'
+  hero_image_url?: string | null
+  hero_tagline?: string | null
+  tagline?: string | null
+  hero_eyebrow_kicker?: string | null
+  hero_eyebrow?: string | null
+  hero_title_lines?: string[]
+  hero_title_mobile?: string | null
+  hero_highlights?: string[]
+  hero_stats?: { value: string; label: string }[]
 }
 
 export interface TenantEvent {
