@@ -12,6 +12,7 @@ import { OrgThemeProvider } from '@/components/member/org-theme-provider'
 import { TenantAuthSync } from '@/components/member/tenant-auth-sync'
 import { TenantSplash } from '@/components/member/tenant-splash'
 import { TenantHead } from '@/components/member/tenant-head'
+import { prewarmSplashAudio } from '@/lib/splash/golf-hit-sound'
 import type { TenantHomeData } from '@/lib/org/types'
 
 function demoTenantData(slug: string): TenantHomeData | null {
@@ -30,6 +31,7 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
   )
 
   useEffect(() => {
+    prewarmSplashAudio()
     forceUnlockBodyScroll()
     let cancelled = false
 
