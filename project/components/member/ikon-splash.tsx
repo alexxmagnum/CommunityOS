@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getGolfSplashCopy } from '@/lib/org/tenant-experience'
 import type { TenantOrg } from '@/lib/org/types'
-import { bindGolfHitAudio, playGolfHitSound } from '@/lib/splash/golf-hit-sound'
+import { bindGolfHitAudio, playGolfHitSound, prewarmSplashAudio, primeGolfImpact } from '@/lib/splash/golf-hit-sound'
 import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
@@ -110,6 +110,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
   }, [showLogo])
 
   useEffect(() => {
+    prewarmSplashAudio()
     void preloadImages([
       GOLF_BALL_IMAGE,
       GOLF_BALL_MOBILE,
@@ -214,6 +215,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
 
   useEffect(() => {
     if (phase !== 'golf') return
+    primeGolfImpact()
     const timer = window.setTimeout(() => setPhase('impact'), 1400)
     return () => window.clearTimeout(timer)
   }, [phase])
@@ -264,7 +266,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
       </button>
       <audio
         ref={bindGolfHitAudio}
-        src="/sounds/golf-hit.mp3?v=3"
+        src="/sounds/golf-hit.mp3?v=4"
         preload="auto"
         playsInline
         className="hidden"
