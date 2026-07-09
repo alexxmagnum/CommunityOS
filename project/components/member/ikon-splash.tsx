@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getGolfSplashCopy } from '@/lib/org/tenant-experience'
 import type { TenantOrg } from '@/lib/org/types'
-import { bindGolfHitAudio, playGolfHitSound, prewarmSplashAudio, primeGolfImpact } from '@/lib/splash/golf-hit-sound'
+import {
+  playGolfHitSound,
+  prewarmSplashAudio,
+  primeGolfImpact,
+  unlockSplashAudioWithGesture,
+} from '@/lib/splash/golf-hit-sound'
 import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
@@ -109,6 +114,10 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
     setScale(Math.min(maxW / width, maxH / height))
   }, [showLogo])
 
+  const handleGolpea = useCallback(() => {
+    void unlockSplashAudioWithGesture().then(() => setPhase('impact'))
+  }, [])
+
   useEffect(() => {
     prewarmSplashAudio()
     void preloadImages([
@@ -120,6 +129,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
   }, [])
 
   useLayoutEffect(() => {
+    if (phase !== 'measure') return
     const wordRow = wordRef.current
     const block = blockRef.current
     if (!wordRow || !block) return
@@ -157,7 +167,7 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
       observer.disconnect()
       window.removeEventListener('resize', onResize)
     }
-  }, [fitToViewport])
+  }, [fitToViewport, phase])
 
   const finish = useCallback(() => {
     forceUnlockBodyScroll()
@@ -216,8 +226,6 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
   useEffect(() => {
     if (phase !== 'golf') return
     primeGolfImpact()
-    const timer = window.setTimeout(() => setPhase('impact'), 1400)
-    return () => window.clearTimeout(timer)
   }, [phase])
 
   useEffect(() => {
@@ -264,14 +272,6 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
       >
         Saltar
       </button>
-      <audio
-        ref={bindGolfHitAudio}
-        src="/sounds/golf-hit.mp3?v=4"
-        preload="auto"
-        playsInline
-        className="hidden"
-        aria-hidden
-      />
 
       {showGolf && (
         <div
@@ -313,6 +313,16 @@ export function GolfSplash({ org }: { org: TenantOrg }) {
 
           {phase === 'impact' && <div className="ikon-splash-flash pointer-events-none" aria-hidden />}
         </div>
+      )}
+
+      {phase === 'golf' && (
+        <button
+          type="button"
+          onClick={handleGolpea}
+          className="absolute bottom-[18%] left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-[#32E4B5]/40 bg-[#32E4B5] px-10 py-3.5 text-sm font-semibold uppercase tracking-[0.25em] text-[#0c0f14] shadow-[0_0_40px_rgba(50,228,181,0.35)] transition-transform hover:scale-105 active:scale-95"
+        >
+          Golpea
+        </button>
       )}
 
       {showLogo && (
