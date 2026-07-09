@@ -20,12 +20,10 @@ const GOLF_BALL_MOBILE = '/splash/golf-ball-mobile.jpg?v=2'
 const GOLF_IMPACT_IMAGE = '/splash/golf-ball-impact.png'
 const GOLF_IMPACT_MOBILE = '/splash/golf-ball-impact-mobile.jpg?v=2'
 const MOBILE_MEDIA = '(max-width: 768px), (max-aspect-ratio: 3/4)'
-const SPLASH_SEEN_KEY = 'ikon-splash-seen'
 const MAX_SPLASH_MS = 9000
 
 function shouldSkipSplash() {
   if (typeof window === 'undefined') return false
-  if (sessionStorage.getItem(SPLASH_SEEN_KEY)) return true
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
@@ -41,7 +39,7 @@ function SpreadReveal({
   active: boolean
 }) {
   return (
-    <p className={cn('flex w-full justify-between uppercase leading-none', className)}>
+    <p className={cn('ikon-splash-sub-line w-full uppercase leading-none', className)}>
       {text.split('').map((char, index) => (
         <span
           key={`${char}-${index}`}
@@ -174,9 +172,6 @@ export function IkonSplash() {
   }, [fitToViewport])
 
   const finish = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(SPLASH_SEEN_KEY, '1')
-    }
     forceUnlockBodyScroll()
     setMounted(false)
   }, [])
@@ -274,6 +269,16 @@ export function IkonSplash() {
         }
       }}
     >
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          finish()
+        }}
+        className="absolute bottom-8 right-8 z-20 rounded-full border border-white/25 px-4 py-2 text-xs font-medium uppercase tracking-wider text-white/70 transition-colors hover:border-white/50 hover:text-white"
+      >
+        Saltar
+      </button>
       <audio
         ref={bindGolfHitAudio}
         src="/sounds/golf-hit.mp3"
@@ -335,7 +340,7 @@ export function IkonSplash() {
         >
           <div
             ref={blockRef}
-            className="ikon-splash-logo flex flex-col items-center text-white"
+            className="ikon-splash-logo flex flex-col items-stretch text-white"
             style={{
               width: `${LOGO_BLOCK_WIDTH}rem`,
               transform: `scale(${scale})`,
@@ -368,19 +373,21 @@ export function IkonSplash() {
               ))}
             </div>
 
-            <SpreadReveal
-              text={LINE2}
-              revealCount={line2Count}
-              active={line2Active}
-              className="ikon-splash-sub mt-[0.55rem] text-[10px] leading-none"
-            />
+            <div className="ikon-splash-sub-track w-full">
+              <SpreadReveal
+                text={LINE2}
+                revealCount={line2Count}
+                active={line2Active}
+                className="mt-[0.55rem] text-[10px] leading-none"
+              />
 
-            <SpreadReveal
-              text={LINE3}
-              revealCount={line3Count}
-              active={line3Active}
-              className="ikon-splash-sub mt-[0.35rem] text-[10px] leading-none"
-            />
+              <SpreadReveal
+                text={LINE3}
+                revealCount={line3Count}
+                active={line3Active}
+                className="mt-[0.35rem] text-[10px] leading-none"
+              />
+            </div>
           </div>
         </div>
       )}

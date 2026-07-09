@@ -642,9 +642,11 @@
 
   .ikon-splash-logo {
     width: 17.5rem;
+    align-items: stretch;
   }
 
   .ikon-splash-logo .ikon-splash-word {
+    width: 100%;
     font-family: var(--font-logo), var(--font-sans), ui-sans-serif, sans-serif;
     font-weight: 600;
     font-synthesis: none;
@@ -653,9 +655,25 @@
     text-rendering: optimizeLegibility;
   }
 
-  .ikon-splash-logo .ikon-splash-sub {
+  .ikon-splash-logo .ikon-splash-sub-track {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ikon-splash-logo .ikon-splash-sub,
+  .ikon-splash-logo .ikon-splash-sub-line {
+    width: 95%;
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+    align-self: center;
     font-family: var(--font-logo), var(--font-sans), ui-sans-serif, sans-serif;
     font-weight: 200;
+    font-size: 10px;
+    letter-spacing: -0.03em;
+    text-align: justify;
+    text-align-last: justify;
+    text-justify: inter-character;
     font-synthesis: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
