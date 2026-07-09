@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CalendarCheck, Loader2 } from 'lucide-react'
-import { labelReservationStatus } from '@/lib/i18n/es'
+import { labelReservationStatus, labelReservationType } from '@/lib/i18n/es'
 import { toast } from 'sonner'
 
 interface ReservationRow {
@@ -132,7 +132,7 @@ export default function AdminReservationsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium">
-                      {r.facility?.name || r.space?.name || r.restaurant?.name || r.reservation_type}
+                      {r.facility?.name || r.space?.name || r.restaurant?.name || labelReservationType(r.reservation_type)}
                     </p>
                     <Badge variant="outline">{r.reference_code}</Badge>
                   </div>

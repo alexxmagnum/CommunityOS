@@ -35,7 +35,7 @@ export const BILLING_PLANS: BillingPlan[] = [
   },
   {
     tier: 'starter',
-    name: 'Starter',
+    name: 'Inicial',
     priceMonthly: 79,
     currency: 'EUR',
     description: 'Clubs pequeños y asociaciones',
@@ -51,10 +51,10 @@ export const BILLING_PLANS: BillingPlan[] = [
   },
   {
     tier: 'professional',
-    name: 'Professional',
+    name: 'Profesional',
     priceMonthly: 199,
     currency: 'EUR',
-    description: 'Operación completa con white-label',
+    description: 'Operación completa con marca personalizada',
     limits: {
       members: 1000,
       eventsPerMonth: 100,
@@ -67,7 +67,7 @@ export const BILLING_PLANS: BillingPlan[] = [
   },
   {
     tier: 'enterprise',
-    name: 'Enterprise',
+    name: 'Empresa',
     priceMonthly: 499,
     currency: 'EUR',
     description: 'Multi-sede y soporte dedicado',

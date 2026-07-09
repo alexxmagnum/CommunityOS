@@ -18,8 +18,8 @@ export default function LegalPage() {
 
   useEffect(() => {
     if (!pageKey) return
-    loadLegalPages(org.id, org.slug).then((pages) => setContent(pages[pageKey]))
-  }, [org.id, org.slug, pageKey])
+    loadLegalPages(org.id, org.slug, org.name).then((pages) => setContent(pages[pageKey]))
+  }, [org.id, org.slug, org.name, pageKey])
 
   if (!pageKey) {
     return (

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BILLING_PLANS, getPlanByTier, type SubscriptionTier } from '@/lib/billing/plans'
+import { labelTier, formatPlanLimits } from '@/lib/i18n/es'
 import { formatMoney } from '@/lib/i18n/format-currency'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,7 @@ export default function BillingPage() {
     setPortalLoading(true)
     try {
       // Placeholder hasta conectar Stripe Checkout / Customer Portal
-      toast.info('Stripe Customer Portal — configurar STRIPE_SECRET_KEY y webhook')
+      toast.info('Portal de facturación de Stripe — configura STRIPE_SECRET_KEY y el webhook')
     } finally {
       setPortalLoading(false)
     }
@@ -44,8 +45,8 @@ export default function BillingPage() {
               <CardTitle>Plan {current.name}</CardTitle>
               <CardDescription>{current.description}</CardDescription>
             </div>
-            <Badge variant="secondary" className="capitalize">
-              {tier}
+            <Badge variant="secondary">
+              {labelTier(tier)}
             </Badge>
           </div>
         </CardHeader>
@@ -58,7 +59,7 @@ export default function BillingPage() {
             <li>Hasta {current.limits.members} miembros</li>
             <li>{current.limits.eventsPerMonth} eventos/mes</li>
             <li>{current.limits.facilities} espacios</li>
-            <li>{current.limits.customDomain ? 'Dominio custom' : 'Sin dominio custom'}</li>
+            <li>{current.limits.customDomain ? 'Dominio personalizado' : 'Sin dominio personalizado'}</li>
           </ul>
           <Button onClick={openStripePortal} disabled={portalLoading} className="gap-2">
             <ExternalLink className="h-4 w-4" />
@@ -76,15 +77,12 @@ export default function BillingPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                {Object.entries(plan.limits)
-                  .filter(([, v]) => v === true || typeof v === 'number')
-                  .slice(0, 4)
-                  .map(([key, val]) => (
-                    <li key={key} className="flex items-center gap-2">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                      {typeof val === 'boolean' ? key : `${val} ${key}`}
-                    </li>
-                  ))}
+                {formatPlanLimits(plan.limits).map((line) => (
+                  <li key={line} className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    {line}
+                  </li>
+                ))}
               </ul>
             </CardContent>
           </Card>

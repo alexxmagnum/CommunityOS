@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTenantOptional } from '@/contexts/TenantContext'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -27,18 +28,25 @@ interface NotificationRow {
 
 export function NotificationBell({ darkNav = false }: { darkNav?: boolean }) {
   const { user } = useAuth()
+  const tenant = useTenantOptional()
   const [items, setItems] = useState<NotificationRow[]>([])
   const [unread, setUnread] = useState(0)
 
   async function load() {
     if (!user) return
     const supabase = getSupabaseClient()
-    const { data } = await supabase
+    let query = supabase
       .from('notifications')
-      .select('id, title, body, link, read_at, created_at')
+      .select('id, title, body, link, read_at, created_at, organization_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(12)
+
+    if (tenant?.org?.id) {
+      query = query.eq('organization_id', tenant.org.id)
+    }
+
+    const { data } = await query
     setItems(data || [])
     setUnread((data || []).filter((n) => !n.read_at).length)
   }
@@ -47,7 +55,7 @@ export function NotificationBell({ darkNav = false }: { darkNav?: boolean }) {
     load()
     const interval = setInterval(load, 60_000)
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, tenant?.org?.id])
 
   async function markRead(id: string) {
     const supabase = getSupabaseClient()

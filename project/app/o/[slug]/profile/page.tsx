@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
@@ -13,12 +14,15 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, User, History } from 'lucide-react'
+import { tenantAuthUrl } from '@/lib/org/tenant-path'
+import { assertTenantOrgMatch } from '@/lib/org/tenant-org-id'
 import { labelReservationStatus } from '@/lib/i18n/es'
 import { toast } from 'sonner'
 
 export default function TenantProfilePage() {
   const { user, loading: authLoading } = useAuth()
-  const { org, demoMode, path } = useTenant()
+  const { org, demoMode, path, slug } = useTenant()
+  const routeSlug = useParams<{ slug: string }>().slug
   const [data, setData] = useState<MemberProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -31,13 +35,20 @@ export default function TenantProfilePage() {
       setLoading(false)
       return
     }
+    try {
+      assertTenantOrgMatch(org, routeSlug)
+    } catch {
+      setData(null)
+      setLoading(false)
+      return
+    }
     loadMemberProfile(org.id, user.id, demoMode).then((d) => {
       setData(d)
       setBio(d.bio || '')
       setFullName(d.full_name || '')
       setLoading(false)
     })
-  }, [user, authLoading, org.id, demoMode])
+  }, [user, authLoading, org.id, org.slug, routeSlug, demoMode])
 
   async function handleSave() {
     if (!user || demoMode) {
@@ -64,7 +75,7 @@ export default function TenantProfilePage() {
           <Card className="mt-8">
             <CardContent className="py-8 text-center">
               <p className="text-muted-foreground">Inicia sesión para ver tu perfil y logros.</p>
-              <Link href={`/auth/login?redirect=${encodeURIComponent(path('/profile'))}`}>
+              <Link href={tenantAuthUrl(slug, 'login', path('/profile'))}>
                 <Button variant="ghost" className="btn-motanos mt-4">Entrar</Button>
               </Link>
             </CardContent>

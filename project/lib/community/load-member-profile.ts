@@ -12,7 +12,7 @@ export async function loadMemberProfile(
       full_name: 'Socio demo',
       bio: 'Amante del golf y el pádel.',
       avatar_url: null,
-      preferences: { favorite_sports: ['golf', 'padel'], favorite_dishes: ['IKON burger'] },
+      preferences: { favorite_sports: ['golf', 'padel'], favorite_dishes: ['Burger IKON'] },
       achievements: DEMO_ACHIEVEMENTS,
       history: DEMO_HISTORY,
       demoMode: true,

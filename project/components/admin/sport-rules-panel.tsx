@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
+import { labelSportName } from '@/lib/i18n/es'
 import { toast } from 'sonner'
 
 const SPORT_KEYS = Object.keys(DEMO_SPORT_RULES)
@@ -25,7 +26,7 @@ export function SportRulesPanel() {
   }
 
   function save() {
-    toast.success('Reglas guardadas (demo — persistir en organization_settings con Supabase)')
+    toast.success('Reglas guardadas (modo demo — conecta Supabase para guardar de verdad)')
   }
 
   return (
@@ -44,7 +45,7 @@ export function SportRulesPanel() {
               onClick={() => setActiveSport(key)}
               className="capitalize"
             >
-              {key}
+              {labelSportName(key)}
             </Button>
           ))}
         </div>

@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ExternalLink, Database, RefreshCw } from 'lucide-react'
 
-const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdndzoby/sql/new'
-
 const STEPS = [
   'Confirma .env con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY (Settings → API).',
   'Si la base está vacía (sin tablas): ejecuta supabase/APPLY_ALL.sql en el SQL Editor.',
@@ -14,6 +12,14 @@ const STEPS = [
   'Si ya tenías esquema pero sin datos: solo APPLY_SEED_AND_PHASES.sql.',
   'Reinicia npm run dev y abre /o/ikon — ya no debería salir el banner demo.',
 ]
+
+function supabaseSqlEditorUrl() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const ref = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+  return ref
+    ? `https://supabase.com/dashboard/project/${ref}/sql/new`
+    : 'https://supabase.com/dashboard'
+}
 
 export default function SetupPage() {
   return (
@@ -54,7 +60,7 @@ export default function SetupPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <a href={SUPABASE_SQL_URL} target="_blank" rel="noopener noreferrer">
+          <a href={supabaseSqlEditorUrl()} target="_blank" rel="noopener noreferrer">
             <Button className="w-full gap-2 bg-amber-500 text-black hover:bg-amber-400 sm:w-auto">
               <ExternalLink className="h-4 w-4" />
               Abrir SQL Editor

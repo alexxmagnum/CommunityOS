@@ -12,7 +12,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
   const { locale, setLocale } = useLocale()
 
   return (
-    <div className={cn('flex items-center gap-1 rounded-full border border-white/15 bg-black/20 p-0.5', className)}>
+    <div className={cn('flex flex-wrap items-center gap-0.5 rounded-full border border-white/15 bg-black/20 p-0.5', className)}>
       {LOCALES.map(({ code, label }) => (
         <button
           key={code}

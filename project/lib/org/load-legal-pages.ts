@@ -4,8 +4,8 @@ import { isSupabaseConfigured } from './is-supabase-configured'
 
 const SETTINGS_KEY = 'legal_pages'
 
-export async function loadLegalPages(orgId: string, slug: string): Promise<LegalPagesMap> {
-  const defaults = getDefaultLegalPages(slug)
+export async function loadLegalPages(orgId: string, slug: string, orgName?: string): Promise<LegalPagesMap> {
+  const defaults = getDefaultLegalPages(orgName ?? slug, slug)
 
   if (!isSupabaseConfigured() || orgId.startsWith('demo-')) {
     return defaults

@@ -13,8 +13,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Trophy, Plus, Loader2, ExternalLink } from 'lucide-react'
+import { Trophy, Plus, Loader2, ExternalLink, Swords, Users } from 'lucide-react'
 import { TOURNAMENT_FORMAT_LABELS, TOURNAMENT_STATUS_LABELS } from '@/lib/tournaments/types'
+import { tenantDashboardPath } from '@/lib/org/tenant-path'
 import { toast } from 'sonner'
 
 interface TournamentRow {
@@ -23,6 +24,7 @@ interface TournamentRow {
   status: string
   event_id: string
   event_title: string
+  participant_count: number
 }
 
 export default function AdminTournamentsPage() {
@@ -32,6 +34,7 @@ export default function AdminTournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [generatingId, setGeneratingId] = useState<string | null>(null)
   const [form, setForm] = useState({ event_id: '', format: 'single_elimination', max_teams: '8' })
 
   const supabase = getSupabaseClient()
@@ -46,6 +49,7 @@ export default function AdminTournamentsPage() {
         status: t.status,
         event_id: t.event_id,
         event_title: t.name,
+        participant_count: 0,
       })))
       setLoading(false)
       return
@@ -54,18 +58,26 @@ export default function AdminTournamentsPage() {
     const orgId = activeOrganization.organization_id
     const { data } = await supabase
       .from('tournaments')
-      .select('id, format, status, event_id, event:events(title)')
+      .select('id, format, status, event_id, event:events(title), tournament_participants(count)')
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false })
 
     setRows((data || []).map((t) => {
       const event = Array.isArray(t.event) ? t.event[0] : t.event
+      const countRow = Array.isArray(t.tournament_participants)
+        ? t.tournament_participants[0]
+        : t.tournament_participants
+      const participantCount =
+        countRow && typeof countRow === 'object' && 'count' in countRow
+          ? Number(countRow.count) || 0
+          : 0
       return {
         id: t.id,
         format: t.format,
         status: t.status,
         event_id: t.event_id,
         event_title: event?.title ?? 'Evento',
+        participant_count: participantCount,
       }
     }))
 
@@ -107,6 +119,43 @@ export default function AdminTournamentsPage() {
     setSaving(false)
   }
 
+  async function generateBracket(tournamentId: string, replace = false) {
+    if (demoMode) {
+      toast.info('Conecta Supabase para generar cuadros reales')
+      return
+    }
+
+    setGeneratingId(tournamentId)
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}/generate-bracket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replace }),
+      })
+      const payload = (await response.json()) as {
+        error?: string
+        code?: string
+        matchCount?: number
+      }
+
+      if (!response.ok) {
+        if (payload.code === 'matches_exist' && window.confirm('Este torneo ya tiene partidos. ¿Quieres regenerar el cuadro?')) {
+          await generateBracket(tournamentId, true)
+          return
+        }
+        toast.error(payload.error || 'No se pudo generar el cuadro')
+        return
+      }
+
+      toast.success(`Cuadro generado: ${payload.matchCount ?? 0} partidos`)
+      load()
+    } catch {
+      toast.error('Error de red al generar el cuadro')
+    } finally {
+      setGeneratingId(null)
+    }
+  }
+
   async function updateStatus(id: string, status: string) {
     if (demoMode) return
     const { error } = await supabase.from('tournaments').update({ status }).eq('id', id)
@@ -126,7 +175,7 @@ export default function AdminTournamentsPage() {
             <Trophy className="h-6 w-6 text-amber-600" />
             Torneos
           </h1>
-          <p className="mt-1 text-muted-foreground">Gestiona brackets y competiciones</p>
+          <p className="mt-1 text-muted-foreground">Gestiona cuadros y competiciones</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -181,12 +230,34 @@ export default function AdminTournamentsPage() {
             <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
               <div>
                 <p className="font-medium">{t.event_title}</p>
-                <div className="mt-1 flex gap-2">
+                <div className="mt-1 flex flex-wrap gap-2">
                   <Badge variant="outline">{TOURNAMENT_FORMAT_LABELS[t.format as keyof typeof TOURNAMENT_FORMAT_LABELS] || t.format}</Badge>
                   <Badge>{TOURNAMENT_STATUS_LABELS[t.status as keyof typeof TOURNAMENT_STATUS_LABELS] || t.status}</Badge>
+                  <Badge variant="secondary">{t.participant_count} equipos</Badge>
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {activeOrganization?.organization?.slug && (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={tenantDashboardPath(activeOrganization.organization.slug, `tournaments/${t.id}`)}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Equipos
+                    </Link>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={generatingId === t.id}
+                  onClick={() => void generateBracket(t.id)}
+                >
+                  {generatingId === t.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Swords className="mr-2 h-4 w-4" />
+                  )}
+                  Generar cuadro
+                </Button>
                 <Select value={t.status} onValueChange={(v) => updateStatus(t.id, v)}>
                   <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -202,6 +273,13 @@ export default function AdminTournamentsPage() {
             </CardContent>
           </Card>
         ))}
+        {rows.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No hay torneos. Crea uno vinculado a un evento de tipo torneo.
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

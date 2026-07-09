@@ -22,15 +22,16 @@ export default function LegalAdminPage() {
   const [loading, setLoading] = useState(true)
 
   const slug = activeOrganization?.organization?.slug ?? 'ikon'
+  const orgName = activeOrganization?.organization?.name ?? slug
   const orgId = activeOrganization?.organization_id ?? 'demo-ikon'
 
   useEffect(() => {
     setLoading(true)
-    loadLegalPages(orgId, slug).then((data) => {
+    loadLegalPages(orgId, slug, orgName).then((data) => {
       setPages(data)
       setLoading(false)
     })
-  }, [orgId, slug])
+  }, [orgId, slug, orgName])
 
   async function handleSave() {
     if (!pages) return
@@ -86,7 +87,7 @@ export default function LegalAdminPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setPages(getDefaultLegalPages(slug))}
+          onClick={() => setPages(getDefaultLegalPages(orgName, slug))}
         >
           Restaurar plantilla
         </Button>

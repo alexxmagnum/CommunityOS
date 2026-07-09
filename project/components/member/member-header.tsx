@@ -5,20 +5,16 @@ import { useEffect, useState } from 'react'
 import { useTenantOptional } from '@/contexts/TenantContext'
 import type { TenantOrg } from '@/lib/org/types'
 import { getTenantLogoUrl } from '@/lib/org/resolve-theme'
+import { preferDarkChrome, isIkonTenant } from '@/lib/org/tenant-experience'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationBell } from '@/components/member/notification-bell'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react'
+import { LogOut, Menu, User, X } from 'lucide-react'
 import { lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 
-const NAV = [
-  { segment: '/reservations?sport=golf', label: 'Golf' },
-  { segment: '/carta', label: 'Carta' },
-  { segment: '/events', label: 'Club' },
-  { segment: '/tournaments', label: 'Torneos' },
-  { segment: '/reservations', label: 'Reservar' },
-]
+import { getTenantNavItems } from '@/lib/org/tenant-modules'
+import { tenantAuthUrl } from '@/lib/org/tenant-path'
 
 const HEADER_BAR_HEIGHT = '4.25rem'
 const DEMO_BANNER_HEIGHT = '2rem'
@@ -28,11 +24,10 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
   const org: TenantOrg | null = tenant?.org ?? null
   const demoMode = tenant?.demoMode ?? false
   const path = tenant?.path ?? ((p = '') => p || '/')
-  const isIkon = org?.slug === 'ikon'
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const { user, loading, signOut, isOrgAdmin, isPlatformAdmin, activeOrganization } = useAuth()
+  const { user, loading, signOut } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 48)
@@ -54,18 +49,17 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
     }
   }, [menuOpen])
 
-  const adminHref = isPlatformAdmin()
-    ? '/platform-admin'
-    : activeOrganization && isOrgAdmin()
-      ? '/dashboard'
-      : '/onboarding'
-
   if (!org) return null
 
+  const darkChrome = preferDarkChrome(org)
+  const isIkon = isIkonTenant(org)
   const transparent = variant === 'transparent'
-  const darkNav = isIkon || transparent
+  const darkNav = isIkon || darkChrome || transparent
 
   const logoUrl = getTenantLogoUrl(org)
+  const navItems = getTenantNavItems(org.modules)
+  const loginHref = tenantAuthUrl(org.slug, 'login', path())
+  const signupHref = tenantAuthUrl(org.slug, 'signup', path())
 
   const showDemoBanner = demoMode && !hideDemoBanner
   const headerOffset = showDemoBanner
@@ -118,7 +112,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
-          {NAV.map(({ segment, label }) => (
+          {navItems.map(({ segment, label }) => (
             <Link
               key={segment}
               href={path(segment)}
@@ -136,31 +130,23 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
           {!loading && user && <NotificationBell darkNav={darkNav} />}
           {!loading && user ? (
             <>
-              {(isOrgAdmin() || isPlatformAdmin()) && (
-                <Link href={adminHref}>
-                  <Button size="sm" variant="ghost" className={cn(darkNav && 'text-white/80 hover:bg-white/10 hover:text-white')}>
-                    <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                    Panel
-                  </Button>
-                </Link>
-              )}
               <Link href={path('/profile')}>
                 <Button size="sm" variant="ghost" className={cn('h-9 w-9 p-0', darkNav && 'text-white/80 hover:bg-white/10 hover:text-white')}>
                   <User className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="sm" variant="ghost" onClick={signOut} className={darkNav ? 'text-white/80 hover:bg-white/10 hover:text-white' : undefined}>
+              <Button size="sm" variant="ghost" onClick={() => void signOut()} className={darkNav ? 'text-white/80 hover:bg-white/10 hover:text-white' : undefined}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </>
           ) : (
             <>
-              <Link href="/auth/login">
+              <Link href={loginHref}>
                 <Button size="sm" variant="ghost" className={cn(darkNav && 'text-white/80 hover:bg-white/10 hover:text-white')}>
                   Entrar
                 </Button>
               </Link>
-              <Link href="/auth/signup">
+              <Link href={signupHref}>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -211,7 +197,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
             style={{ top: headerOffset }}
           >
         <nav className="flex w-full flex-col px-6 py-5">
-          {NAV.map(({ segment, label }) => (
+          {navItems.map(({ segment, label }) => (
             <Link
               key={segment}
               href={path(segment)}
@@ -231,17 +217,6 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
 
           {!loading && user ? (
             <div className="flex flex-col gap-2">
-              {(isOrgAdmin() || isPlatformAdmin()) && (
-                <Link href={adminHref} onClick={() => setMenuOpen(false)}>
-                  <Button
-                    variant="ghost"
-                    className={cn('h-11 w-full justify-start px-0', darkNav && 'text-white/80 hover:bg-white/5 hover:text-white')}
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Panel
-                  </Button>
-                </Link>
-              )}
               <Link href={path('/profile')} onClick={() => setMenuOpen(false)}>
                 <Button
                   variant="ghost"
@@ -265,7 +240,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <Link href="/auth/login" onClick={() => setMenuOpen(false)}>
+              <Link href={loginHref} onClick={() => setMenuOpen(false)}>
                 <Button
                   variant="ghost"
                   className={cn('h-11 w-full justify-center', darkNav && 'text-white/85 hover:bg-white/10 hover:text-white')}
@@ -273,7 +248,7 @@ export function MemberHeader({ variant = 'default', hideDemoBanner = false }: { 
                   Entrar
                 </Button>
               </Link>
-              <Link href="/auth/signup" onClick={() => setMenuOpen(false)}>
+              <Link href={signupHref} onClick={() => setMenuOpen(false)}>
                 <Button
                   className={cn(
                     'h-11 w-full justify-center rounded-full text-sm font-medium',

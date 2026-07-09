@@ -1,12 +1,13 @@
 'use client'
 
 /**
- * Provider de idioma — preparado; no montado hasta la pasada final de i18n.
- * Ver ROADMAP.md § i18n — activar al final.
+ * Provider de idioma — español por defecto.
+ * Idiomas: es, en, fr, de, it, pt
  */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   getMessages,
+  getLabels,
   localeFromOrg,
   readLocaleCookie,
   resolveLocale,
@@ -14,6 +15,7 @@ import {
   writeLocaleCookie,
   type Locale,
 } from '@/lib/i18n'
+import type { LabelCatalog } from '@/lib/i18n/labels'
 
 interface LocaleContextValue {
   locale: Locale
@@ -72,6 +74,12 @@ export function useLocale() {
     }
   }
   return ctx
+}
+
+/** Etiquetas de sistema (enums, estados) según el idioma activo */
+export function useLabels(): LabelCatalog {
+  const { locale } = useLocale()
+  return useMemo(() => getLabels(locale), [locale])
 }
 
 export function useResolvedLocale(input?: string | null): Locale {

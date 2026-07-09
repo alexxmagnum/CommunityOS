@@ -134,14 +134,14 @@ export default function IntegrationsPage() {
             <CardContent className="flex items-center justify-between gap-4">
               {item.lastSyncAt && (
                 <p className="text-xs text-muted-foreground">
-                  Última sync: {new Date(item.lastSyncAt).toLocaleString('es-ES')}
+                  Última sincronización: {new Date(item.lastSyncAt).toLocaleString('es-ES')}
                 </p>
               )}
               <div className="ml-auto flex gap-2">
                 {item.connected && (
-                  <Button variant="outline" size="sm" className="gap-1" onClick={() => toast.info('Sync manual — próximamente')}>
+                  <Button variant="outline" size="sm" className="gap-1" onClick={() => toast.info('Sincronización manual — próximamente')}>
                     <RefreshCw className="h-3.5 w-3.5" />
-                    Sync
+                    Sincronizar
                   </Button>
                 )}
                 <Button

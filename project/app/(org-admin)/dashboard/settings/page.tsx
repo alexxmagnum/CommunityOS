@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Settings, Building2, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { labelRole } from '@/lib/i18n/es'
+import { useTenantDashboard } from '@/hooks/use-tenant-dashboard'
 
 export default function SettingsPage() {
   const { activeOrganization, user, isOrgAdmin } = useAuth()
+  const { dashboardPath } = useTenantDashboard()
   const org = activeOrganization?.organization
 
   return (
@@ -23,9 +26,9 @@ export default function SettingsPage() {
         <CardContent className="space-y-3 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Nombre</span><span className="font-medium">{org?.name}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Identificador URL</span><code className="text-xs bg-muted px-2 py-0.5 rounded">{org?.slug}</code></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Tu rol</span><Badge>{activeOrganization?.role?.display_name || activeOrganization?.role?.name}</Badge></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Tu rol</span><Badge>{labelRole(activeOrganization?.role?.name, activeOrganization?.role?.display_name)}</Badge></div>
           {isOrgAdmin() && (
-            <Link href="/dashboard/branding"><Button variant="outline" size="sm" className="mt-2">Editar marca →</Button></Link>
+            <Link href={dashboardPath('branding')}><Button variant="outline" size="sm" className="mt-2">Editar marca →</Button></Link>
           )}
         </CardContent>
       </Card>

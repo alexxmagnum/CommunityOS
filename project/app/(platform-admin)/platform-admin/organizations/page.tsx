@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import type { BrandTemplateId } from '@/lib/org/brand-templates'
+import { applyTemplateToOrganization } from '@/lib/org/persist-branding'
+import { BrandTemplatePicker } from '@/components/branding/brand-template-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,6 +50,7 @@ import { Switch } from '@/components/ui/switch'
 import { tenantPath } from '@/lib/org/tenant-path'
 import Link from 'next/link'
 import { labelTier } from '@/lib/i18n/es'
+import { modulesForDatabase } from '@/lib/org/tenant-modules'
 
 const MODULE_KEYS = ['restaurant', 'sports', 'events', 'tournaments'] as const
 
@@ -58,6 +62,20 @@ const MODULE_LABELS: Record<(typeof MODULE_KEYS)[number], string> = {
 }
 
 const TIER_OPTIONS = ['trial', 'starter', 'professional', 'enterprise'] as const
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function resolveMemberCount(org: Organization): number {
+  if (typeof org.member_count === 'number') return org.member_count
+  if (Array.isArray(org.member_count)) return org.member_count[0]?.count ?? 0
+  return 0
+}
 
 interface Organization {
   id: string
@@ -75,7 +93,7 @@ interface Organization {
   subscription_ends_at: string | null
   modules: Record<string, boolean>
   created_at: string
-  member_count?: number
+  member_count?: number | { count: number }[]
 }
 
 export default function OrganizationsPage() {
@@ -94,18 +112,31 @@ export default function OrganizationsPage() {
     slug: '',
     domain: '',
     subscription_tier: 'trial',
+    brand_template: 'coastal' as BrandTemplateId,
   })
 
   const supabase = getSupabaseClient()
 
   async function loadOrganizations() {
     try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_platform_organizations')
+      if (!rpcError && rpcData) {
+        const rows = Array.isArray(rpcData)
+          ? rpcData
+          : typeof rpcData === 'string'
+            ? JSON.parse(rpcData)
+            : []
+        setOrganizations(rows as Organization[])
+        return
+      }
+
+      if (rpcError) {
+        console.warn('[platform-admin] get_platform_organizations:', rpcError.message)
+      }
+
       let query = supabase
         .from('organizations')
-        .select(`
-          *,
-          member_count:organization_members(count)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (filter !== 'all') {
@@ -140,7 +171,12 @@ export default function OrganizationsPage() {
 
     setCreating(true)
     try {
-      const slug = newOrg.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      const slug = slugify(newOrg.slug || newOrg.name)
+      if (!slug) {
+        toast.error('El identificador URL no es válido')
+        setCreating(false)
+        return
+      }
       const { data: created, error } = await supabase
         .from('organizations')
         .insert({
@@ -154,6 +190,17 @@ export default function OrganizationsPage() {
         .single()
 
       if (error) throw error
+
+      if (created) {
+        try {
+          await applyTemplateToOrganization(supabase, created.id, newOrg.brand_template, newOrg.name, {
+            slug,
+          })
+        } catch (brandError) {
+          console.warn('[platform-admin] brand template:', brandError)
+          toast.message('Organización creada, pero la plantilla no se aplicó. Configúrala en Marca.')
+        }
+      }
 
       if (user && created) {
         const { data: ownerRole } = await supabase
@@ -173,9 +220,9 @@ export default function OrganizationsPage() {
         }
       }
 
-      toast.success('Organización creada')
+      toast.success('Organización creada con plantilla aplicada')
       setCreateOpen(false)
-      setNewOrg({ name: '', slug: '', domain: '', subscription_tier: 'trial' })
+      setNewOrg({ name: '', slug: '', domain: '', subscription_tier: 'trial', brand_template: 'coastal' })
       loadOrganizations()
     } catch (error: any) {
       console.error('Error creating organization:', error)
@@ -213,7 +260,7 @@ export default function OrganizationsPage() {
       const { error } = await supabase.from('organizations').update({
         name: editingOrg.name,
         subscription_tier: editingOrg.subscription_tier,
-        modules: editingOrg.modules,
+        modules: modulesForDatabase(editingOrg.modules),
         domain: editingOrg.domain,
         is_active: editingOrg.is_active,
       }).eq('id', editingOrg.id)
@@ -259,7 +306,7 @@ export default function OrganizationsPage() {
               Nueva organización
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Crear organización</DialogTitle>
               <DialogDescription>
@@ -278,7 +325,7 @@ export default function OrganizationsPage() {
                     setNewOrg(prev => ({
                       ...prev,
                       name,
-                      slug: prev.slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                      slug: prev.slug || slugify(name),
                     }))
                   }}
                 />
@@ -289,9 +336,11 @@ export default function OrganizationsPage() {
                   id="slug"
                   placeholder="ikon-golf-club"
                   value={newOrg.slug}
-                  onChange={(e) => setNewOrg(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={(e) => setNewOrg(prev => ({ ...prev, slug: slugify(e.target.value) }))}
                 />
-                <p className="text-xs text-slate-500">Usado en URLs: communityos.app/o/{newOrg.slug || 'slug'}</p>
+                <p className="text-xs text-slate-500">
+                  Usado en URLs: communityos.app/o/{slugify(newOrg.slug || newOrg.name) || 'slug'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="domain">Dominio personalizado</Label>
@@ -300,6 +349,17 @@ export default function OrganizationsPage() {
                   placeholder="ikon.example.com"
                   value={newOrg.domain}
                   onChange={(e) => setNewOrg(prev => ({ ...prev, domain: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Plantilla de marca</Label>
+                <p className="text-xs text-slate-500">
+                  La identidad visual se aplica automáticamente al crear el club.
+                </p>
+                <BrandTemplatePicker
+                  compact
+                  selectedId={newOrg.brand_template}
+                  onSelect={(id) => setNewOrg((prev) => ({ ...prev, brand_template: id }))}
                 />
               </div>
               <div className="space-y-2">
@@ -474,7 +534,7 @@ export default function OrganizationsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{(org.member_count as any)?.[0]?.count || 0}</span>
+                      <span className="text-sm">{resolveMemberCount(org)}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

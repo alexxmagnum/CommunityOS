@@ -1,37 +1,49 @@
 /**
- * i18n — preparado para activación final (post-estabilización).
- * Hoy la app usa español vía `lib/i18n/es.ts` y copy inline.
- * Al cerrar features: conectar LocaleProvider + LocaleSwitcher y migrar strings a messages/.
+ * i18n — arquitectura escalable
+ *
+ * Idiomas: es, en, fr, de, it, pt
+ *
+ * - `messages/`     → copy de UI (botones, títulos de pantalla)
+ * - `labels/`       → enums y estados del sistema (getLabels(locale))
+ * - `content/`      → fallback seed legacy + localize al cargar datos
+ * - `types.ts`      → Locale, DEFAULT_LOCALE, resolveLocale
+ *
+ * Uso en componentes: `const { t, locale } = useLocale()` + `const labels = useLabels()`
+ * Uso en loaders:     `resolveAppLocale({ orgLocale })` + `localizeFacility(locale, row)`
  */
+import { messages as de } from './messages/de'
 import { messages as en } from './messages/en'
 import { messages as es } from './messages/es'
+import { messages as fr } from './messages/fr'
+import { messages as it } from './messages/it'
 import { messages as pt } from './messages/pt'
 import type { MessageTree } from './messages/es'
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  intlLocaleFor,
+  isLocale,
+  localeFromOrg,
+  resolveLocale,
+  type Locale,
+} from './types'
 
-export type Locale = 'es' | 'en' | 'pt'
+export type { Locale, MessageTree }
+export {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  intlLocaleFor,
+  isLocale,
+  localeFromOrg,
+  resolveLocale,
+  LOCALE_CODES,
+} from './types'
 
-export const LOCALES: { code: Locale; label: string }[] = [
-  { code: 'es', label: 'Español' },
-  { code: 'en', label: 'English' },
-  { code: 'pt', label: 'Português' },
-]
+export const LOCALES = SUPPORTED_LOCALES.map(({ code, label }) => ({ code, label }))
 
-const CATALOG: Record<Locale, MessageTree> = { es, en, pt }
+const CATALOG: Record<Locale, MessageTree> = { es, en, fr, de, it, pt }
 
 const LOCALE_COOKIE = 'community_os_locale'
-
-export function resolveLocale(input?: string | null): Locale {
-  if (input === 'en' || input === 'en-US' || input === 'en-GB') return 'en'
-  if (input === 'pt' || input === 'pt-PT' || input === 'pt-BR') return 'pt'
-  return 'es'
-}
-
-export function localeFromOrg(orgLocale?: string | null): Locale {
-  if (!orgLocale) return 'es'
-  if (orgLocale.startsWith('en')) return 'en'
-  if (orgLocale.startsWith('pt')) return 'pt'
-  return 'es'
-}
 
 export function getMessages(locale: Locale): MessageTree {
   return CATALOG[locale]
@@ -63,7 +75,7 @@ export function readLocaleCookie(): Locale | null {
   if (typeof document === 'undefined') return null
   const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`))
   const value = match?.[1]
-  return value === 'en' || value === 'pt' || value === 'es' ? value : null
+  return isLocale(value) ? value : null
 }
 
 export function writeLocaleCookie(locale: Locale) {
@@ -71,11 +83,43 @@ export function writeLocaleCookie(locale: Locale) {
   document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000;samesite=lax`
 }
 
-// Re-export label helpers from es module (backward compatible)
+/** Prioridad: cookie usuario → locale org → español */
+export function resolveAppLocale(input?: {
+  orgLocale?: string | null
+  userLocale?: Locale | null
+}): Locale {
+  if (input?.userLocale) return input.userLocale
+  const cookie = readLocaleCookie()
+  if (cookie) return cookie
+  if (input?.orgLocale) return localeFromOrg(input.orgLocale)
+  return DEFAULT_LOCALE
+}
+
+export { getLabels, type LabelCatalog } from './labels'
+export {
+  localizeContent,
+  localizeFacility,
+  localizeEvent,
+  localizeMenuCategory,
+  localizeDish,
+  localizeActivity,
+} from './content'
+
+// Re-export español por defecto (imports legacy `@/lib/i18n/es`)
 export {
   labelEventType,
   labelTier,
   labelMemberStatus,
   labelReservationStatus,
+  labelRole,
+  labelPlatformRole,
+  labelSportName,
+  labelReservationType,
+  labelActivityType,
+  labelEventStatus,
+  formatBillingLimit,
+  formatPlanLimits,
+  translateEmailProviderError,
+  translateAuthError,
   EVENT_TYPE_LABELS,
-} from './es'
+} from './labels/es'

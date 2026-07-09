@@ -35,7 +35,7 @@ const DEMO_LEGAL: Record<string, Partial<LegalPagesMap>> = {
     privacy: {
       title: 'Privacidad — IKON Golf Club',
       updated_at: '2026-07-01',
-      body: `IKON trata tus datos conforme al RGPD. Usamos tu información para gestionar tu membresía, reservas de tee time, inscripciones a torneos y comunicaciones del club.
+      body: `IKON trata tus datos conforme al RGPD. Usamos tu información para gestionar tu membresía, reservas de salida en el campo, inscripciones a torneos y comunicaciones del club.
 
 Contacto DPO: privacidad@ikon.club`,
     },
@@ -56,12 +56,23 @@ Contacto: privacidad@marina.club`,
   },
 }
 
-export function getDefaultLegalPages(slug: string): LegalPagesMap {
-  const overrides = DEMO_LEGAL[slug] ?? {}
+export function getDefaultLegalPages(orgName: string, slug?: string): LegalPagesMap {
+  const club = orgName || slug || 'el club'
+  const demoOverrides = slug ? DEMO_LEGAL[slug] : undefined
+
   return {
-    privacy: overrides.privacy ?? { ...DEFAULT_LEGAL.privacy, title: `${DEFAULT_LEGAL.privacy.title} — ${slug}` },
-    terms: overrides.terms ?? { ...DEFAULT_LEGAL.terms },
-    cookies: overrides.cookies ?? { ...DEFAULT_LEGAL.cookies },
+    privacy: demoOverrides?.privacy ?? {
+      ...DEFAULT_LEGAL.privacy,
+      title: `Política de privacidad — ${club}`,
+      body: `${club} trata tus datos conforme al RGPD. Usamos tu información para gestionar tu membresía, reservas, inscripciones a eventos y comunicaciones del club.
+
+Puedes solicitar acceso, rectificación o eliminación escribiendo al administrador del club.`,
+    },
+    terms: demoOverrides?.terms ?? {
+      ...DEFAULT_LEGAL.terms,
+      title: `Términos de uso — ${club}`,
+    },
+    cookies: demoOverrides?.cookies ?? { ...DEFAULT_LEGAL.cookies },
   }
 }
 

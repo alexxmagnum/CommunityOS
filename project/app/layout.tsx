@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Instrument_Serif, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { LocaleProvider } from '@/contexts/LocaleContext'
 import { Toaster } from '@/components/ui/sonner'
 import { PwaRegister } from '@/components/pwa/pwa-register'
 
@@ -42,9 +43,11 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${plusJakarta.variable} ${instrumentSerif.variable} ${montserrat.variable} font-sans antialiased`}>
         <AuthProvider>
-          {children}
-          <PwaRegister />
-          <Toaster position="top-right" richColors />
+          <LocaleProvider defaultLocale="es">
+            {children}
+            <PwaRegister />
+            <Toaster position="top-right" richColors />
+          </LocaleProvider>
         </AuthProvider>
       </body>
     </html>
