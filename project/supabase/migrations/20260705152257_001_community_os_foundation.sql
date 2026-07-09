@@ -165,9 +165,9 @@ CREATE TABLE IF NOT EXISTS roles (
 -- Insert default system roles
 INSERT INTO roles (id, organization_id, name, display_name, description, is_system, permissions)
 VALUES 
-  (gen_random_uuid(), NULL, 'org_owner', 'Organization Owner', 'Full access to organization', true, '["*"]'),
-  (gen_random_uuid(), NULL, 'org_admin', 'Organization Admin', 'Administrative access', true, '["manage_users", "manage_settings", "manage_content", "manage_reservations", "manage_events", "view_analytics"]'),
-  (gen_random_uuid(), NULL, 'org_member', 'Member', 'Standard member access', true, '["make_reservations", "join_events", "view_content"]')
+  (gen_random_uuid(), NULL, 'org_owner', 'Propietario del club', 'Acceso total a la organización', true, '["*"]'),
+  (gen_random_uuid(), NULL, 'org_admin', 'Administrador del club', 'Acceso administrativo', true, '["manage_users", "manage_settings", "manage_content", "manage_reservations", "manage_events", "view_analytics"]'),
+  (gen_random_uuid(), NULL, 'org_member', 'Miembro', 'Acceso estándar de socio', true, '["make_reservations", "join_events", "view_content"]')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
@@ -299,10 +299,10 @@ CREATE TABLE IF NOT EXISTS sports (
 -- Insert common sports
 INSERT INTO sports (id, name, display_name, icon) VALUES
   (gen_random_uuid(), 'golf', 'Golf', 'flag'),
-  (gen_random_uuid(), 'padel', 'Padel', 'circle-dot'),
-  (gen_random_uuid(), 'tennis', 'Tennis', 'circle'),
-  (gen_random_uuid(), 'football', 'Football', 'circle'),
-  (gen_random_uuid(), 'billiards', 'Billiards', 'circle'),
+  (gen_random_uuid(), 'padel', 'Pádel', 'circle-dot'),
+  (gen_random_uuid(), 'tennis', 'Tenis', 'circle'),
+  (gen_random_uuid(), 'football', 'Fútbol', 'circle'),
+  (gen_random_uuid(), 'billiards', 'Billar', 'circle'),
   (gen_random_uuid(), 'pickleball', 'Pickleball', 'circle'),
   (gen_random_uuid(), 'pitch_and_putt', 'Pitch & Putt', 'flag')
 ON CONFLICT DO NOTHING;
@@ -1576,7 +1576,14 @@ CREATE POLICY "media_library_write_org" ON media_library FOR ALL
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = now();
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = TG_TABLE_SCHEMA
+      AND table_name = TG_TABLE_NAME
+      AND column_name = 'updated_at'
+  ) THEN
+    NEW.updated_at = now();
+  END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1589,7 +1596,7 @@ BEGIN
   FOR tbl IN 
     SELECT table_name FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name NOT IN ('platform_admins', 'sports', 'activity_feed', 'event_participants', 'tournament_participants', 'matches', 'user_achievements')
+    AND table_name NOT IN ('platform_admins', 'roles', 'sports', 'activity_feed', 'event_participants', 'tournament_participants', 'matches', 'user_achievements')
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS update_%s_updated_at ON %s', tbl.table_name, tbl.table_name);
     EXECUTE format('CREATE TRIGGER update_%s_updated_at BEFORE UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', tbl.table_name, tbl.table_name);

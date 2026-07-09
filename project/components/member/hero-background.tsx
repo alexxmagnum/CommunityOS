@@ -16,11 +16,14 @@ type HeroBackgroundProps = {
   className?: string
   /** Imagen concreta (p. ej. hero móvil). Si falla, usa fallbacks globales. */
   image?: string
+  /** Imagen del club (organizations / branding). Tiene prioridad sobre los assets por defecto. */
+  preferredImage?: string
 }
 
 /** Foto a ancho del marco, altura proporcional — sin zoom ni recorte */
-export function HeroBackground({ className, image }: HeroBackgroundProps) {
-  const sources = image ? [image, ...HERO_IMAGE_FALLBACKS] : HERO_IMAGE_FALLBACKS
+export function HeroBackground({ className, image, preferredImage }: HeroBackgroundProps) {
+  const baseSources = image ? [image, ...HERO_IMAGE_FALLBACKS] : HERO_IMAGE_FALLBACKS
+  const sources = preferredImage ? [preferredImage, ...baseSources] : baseSources
   const [index, setIndex] = useState(0)
   const src = sources[index]
   const isLast = index >= sources.length - 1

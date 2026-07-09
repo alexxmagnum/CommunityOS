@@ -44,7 +44,7 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Supabase CLI | Migraciones versionadas, `db push`, tipos generados | `supabase/` |
 | `.env.example` + README | Onboarding de desarrolladores | raíz `project/` |
 | Quitar dependencia demo | Homepage y menú funcionan solo con datos reales; demo como flag explícito | `lib/org/demo-tenant.ts`, `load-tenant-home.ts` |
-| Deshardcodear IKON | Branding 100% desde `organizations`; `ikon-brand.ts` solo como preset opcional | `lib/org/ikon-brand.ts`, `OrgThemeProvider` |
+| Deshardcodear IKON | ✅ Branding desde `organizations` + settings; `ikon-brand.ts` solo preset demo | `lib/org/tenant-experience.ts`, panel Marca |
 
 ### 1.2 Motor de disponibilidad y reservas
 
@@ -84,21 +84,55 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Admin media | `/dashboard/media` |
 | Conectar a menú y eventos | `cover_image_url`, `dish_images` o FK a `media_library` |
 
-### Entregables Fase 1
-- [ ] Reservas con disponibilidad real
-- [ ] Admin de reservas operativo
-- [ ] Sin demo mode por defecto en producción
-- [ ] Invitaciones de miembros funcionando
-- [ ] Fotos reales en menú y eventos
-- [ ] Notificaciones in-app básicas
+## Fase 1 — En progreso
+
+### Completado en código (rama `develop`)
+- [x] Motor de disponibilidad (`lib/reservations/availability.ts`)
+- [x] Selector de horarios en reservas miembro
+- [x] Prevención de conflictos (trigger SQL)
+- [x] Admin de reservas (`/dashboard/reservations`)
+- [x] Notificaciones in-app (tabla + campana)
+- [x] Invitaciones por enlace (`/invite/[token]`)
+- [x] Media library básica (`/dashboard/media`)
+- [x] Espacios terraza/salón seed IKON
+
+### Pendiente Fase 1
+- [ ] Aplicar migraciones SQL en Supabase (phase1 + branding assets)
+- [x] Email transaccional para invitaciones
+
+### Completado Fase 1 (código)
+- [x] Reducir demo mode — solo sin Supabase o sin org en DB
+- [x] Branding dinámico desde `organizations` (`resolve-theme.ts`)
+- [x] Sin mezcla de datos demo cuando la org existe en DB
+
 
 **Rama sugerida:** `feature/phase-1-vendible`
 
 ---
 
-## Fase 2 — Diferenciación (6–8 semanas)
+## Fase 2 — En progreso (código en `develop`)
 
-**Meta:** Torneos, comunidad y discovery personalizado. El producto deja de parecer "gestor de reservas" y empieza a parecer "club vivo".
+### Completado en código
+- [x] Tournament engine: admin `/dashboard/tournaments`, público `/o/[slug]/tournaments`
+- [x] Bracket UI con datos demo de pádel
+- [x] Rankings en vista de torneo
+- [x] Perfil comunidad: bio, logros, historial (`/o/[slug]/profile`)
+- [x] Discovery personalizado + sección "Para ti" en homepage
+- [x] Eventos: lista de espera + QR check-in
+- [x] Migración SQL `20260708100000_phase2_tournaments_community.sql`
+
+### Pendiente Fase 2
+- [x] Generación automática de cuadro desde el panel de torneos
+- [x] Admin check-in escáner
+- [x] Recordatorios de eventos (cron + email Resend)
+
+**Rama sugerida:** `feature/phase-2-diferenciacion`
+
+---
+
+## Fase 2 — Referencia original
+
+**Meta:** Torneos, comunidad y discovery personalizado.
 
 ### 2.1 Tournament Engine
 
@@ -156,7 +190,7 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 - [ ] Al menos un torneo end-to-end con bracket
 - [ ] Perfiles con historial y badges
 - [ ] Discovery personalizado por usuario
-- [ ] QR check-in en eventos
+- [x] QR check-in en eventos
 - [ ] Homepage que cambia según quién eres y qué hiciste antes
 
 **Rama sugerida:** `feature/phase-2-diferenciacion`
@@ -221,11 +255,13 @@ Esto no es obligatorio para documentar el plan, pero **sí para trabajar con seg
 | Documentación API interna | Para integraciones futuras |
 
 ### Entregables Fase 3
-- [ ] Nuevo tenant operativo solo desde Super Admin
-- [ ] Dominio custom funcionando
-- [ ] Billing con Stripe
-- [ ] Realtime en homepage y eventos
-- [ ] CI verde en cada PR
+- [x] Segundo tenant demo (Marina) operativo en `/o/marina`
+- [x] Dominio custom (middleware `*.localhost` → tenant)
+- [x] Páginas legales editables por tenant
+- [x] Billing con estructura Stripe + límites por tier
+- [x] Realtime demo en plazas de eventos + hook Supabase
+- [x] Salud de plataforma en Super Admin
+- [x] CI: typecheck, vitest, build
 
 **Rama sugerida:** `feature/phase-3-escala`
 
@@ -243,6 +279,27 @@ Items del Master Prompt que pueden ir en paralelo o post-lanzamiento:
 | Integraciones | Google Calendar, Mailchimp, POS restaurante |
 | Más deportes | Reglas configurables por `sport` en admin |
 | Multi-idioma completo | EN, ES, PT mínimo |
+
+### Entregables Fase 4 (código)
+- [ ] i18n ES / EN / PT + selector — **diferido al cierre** (base en `lib/i18n/`, ver abajo)
+- [x] Checkout pagos (demo + API Stripe placeholder) en eventos de pago
+- [x] PWA: manifest + service worker
+- [x] Integraciones admin (Google Calendar, Mailchimp, POS)
+- [x] Reglas de deporte configurables en admin
+- [x] Motor de recomendaciones por scoring (base ML)
+
+**Migración:** `20260710100000_phase4_vision.sql` (tabla `payments`)
+
+### i18n — activar al final (cuando el copy esté estable)
+
+| Qué ya existe | Qué falta al activar |
+|---------------|----------------------|
+| `lib/i18n/messages/{es,en,pt}.ts` | Envolver tenant en `LocaleProvider` |
+| `lib/i18n/index.ts` (`t`, cookies, locales) | Montar `LocaleSwitcher` en header |
+| `contexts/LocaleContext.tsx` | Migrar UI a claves `t('…')` o extraer de `es.ts` |
+| `components/member/locale-switcher.tsx` | `organization_settings.locale` por tenant |
+
+**Orden recomendado:** Supabase + producto estable → pasada única de strings → selector → prueba EN/PT.
 
 ---
 

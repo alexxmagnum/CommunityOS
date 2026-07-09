@@ -52,6 +52,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { localizeMenuCategory, localizeDish } from '@/lib/i18n/content'
+import { useLocale } from '@/contexts/LocaleContext'
 import { toast } from 'sonner'
 
 interface MenuCategory {
@@ -80,6 +82,7 @@ interface Dish {
 
 export default function RestaurantPage() {
   const { activeOrganization, isOrgAdmin } = useAuth()
+  const { locale } = useLocale()
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
@@ -117,7 +120,7 @@ export default function RestaurantPage() {
         .eq('is_active', true)
         .order('sort_order')
 
-      setCategories(categoriesData || [])
+      setCategories((categoriesData || []).map((c) => localizeMenuCategory(locale, c)))
 
       // Load dishes
       const { data: dishesData } = await supabase
@@ -126,7 +129,7 @@ export default function RestaurantPage() {
         .eq('organization_id', orgId)
         .order('sort_order')
 
-      setDishes(dishesData || [])
+      setDishes((dishesData || []).map((d) => localizeDish(locale, d)))
     } catch (error) {
       console.error('Error loading data:', error)
       toast.error('No se pudo cargar la carta')
@@ -137,7 +140,7 @@ export default function RestaurantPage() {
 
   useEffect(() => {
     loadData()
-  }, [activeOrganization])
+  }, [activeOrganization, locale])
 
   async function handleCreateDish() {
     if (!newDish.name || !newDish.price) {

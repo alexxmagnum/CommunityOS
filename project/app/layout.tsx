@@ -1,12 +1,15 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { DM_Sans, Instrument_Serif, Montserrat } from 'next/font/google'
+import { Plus_Jakarta_Sans, Instrument_Serif, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { LocaleProvider } from '@/contexts/LocaleContext'
 import { Toaster } from '@/components/ui/sonner'
+import { PwaRegister } from '@/components/pwa/pwa-register'
 
-const dmSans = DM_Sans({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-sans',
+  weight: ['200', '300', '400', '500', '600', '700'],
 })
 
 const instrumentSerif = Instrument_Serif({
@@ -24,6 +27,11 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'Community OS — Comunidades, clubs y experiencias',
   description: 'El sistema operativo que convierte clubs y espacios en comunidades vivas. Eventos, deporte, gastronomía y socios en un solo lugar.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Community OS',
+  },
 }
 
 export default function RootLayout({
@@ -33,10 +41,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${instrumentSerif.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${plusJakarta.variable} ${instrumentSerif.variable} ${montserrat.variable} font-sans antialiased`}>
         <AuthProvider>
-          {children}
-          <Toaster position="top-right" richColors />
+          <LocaleProvider defaultLocale="es">
+            {children}
+            <PwaRegister />
+            <Toaster position="top-right" richColors />
+          </LocaleProvider>
         </AuthProvider>
       </body>
     </html>

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:check": "node scripts/check-supabase.mjs"
+    "test": "vitest run",
+    "db:check": "node scripts/check-supabase.mjs",
+    "dev:fresh": "scripts\\start-dev.bat"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -71,6 +73,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
+    "vitest": "^3.2.4",
     "zod": "^3.23.8"
   }
 }

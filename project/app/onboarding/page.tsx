@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { DEFAULT_TENANT_SLUG, tenantPath } from '@/lib/org/tenant-path'
+import { DEFAULT_TENANT_SLUG, tenantPath, tenantDashboardPath } from '@/lib/org/tenant-path'
 import { MemberHeader } from '@/components/member/member-header'
 import { OrgThemeProvider } from '@/components/member/org-theme-provider'
 import { TenantProvider } from '@/contexts/TenantContext'
@@ -13,17 +13,21 @@ import { Button } from '@/components/ui/button'
 import { Building2, Clock, LogOut, Mail } from 'lucide-react'
 
 export default function OnboardingPage() {
-  const { user, profile, activeOrganization, signOut, loading } = useAuth()
+  const { user, profile, activeOrganization, signOut, loading, authReady, isOrgAdmin } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
   const reason = searchParams.get('reason')
 
   useEffect(() => {
-    if (loading) return
+    if (!authReady || loading) return
     if (!user) {
       router.replace('/auth/login')
+      return
     }
-  }, [loading, user, router])
+    if (activeOrganization && isOrgAdmin() && activeOrganization.organization?.slug) {
+      router.replace(tenantDashboardPath(activeOrganization.organization.slug))
+    }
+  }, [authReady, loading, user, activeOrganization, isOrgAdmin, router])
 
   if (loading) {
     return (
@@ -42,7 +46,7 @@ export default function OnboardingPage() {
       facilities: DEMO_FACILITIES,
       activities: DEMO_ACTIVITIES,
       stats: { events: 0, members: 0 },
-      demoMode: true,
+      demoMode: false,
     }}>
     <OrgThemeProvider org={DEMO_TENANT}>
       <MemberHeader />
@@ -63,7 +67,7 @@ export default function OnboardingPage() {
           {isMember ? (
             <>
               Eres miembro de <strong className="text-foreground">{activeOrganization?.organization?.name}</strong>,
-              pero el panel de administración requiere permisos de propietario o admin.
+              pero el panel de administración requiere permisos de propietario o administrador.
               Contacta con el administrador de tu organización.
             </>
           ) : (
@@ -83,10 +87,15 @@ export default function OnboardingPage() {
         )}
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {activeOrganization && isOrgAdmin() && activeOrganization.organization?.slug ? (
+            <Link href={tenantDashboardPath(activeOrganization.organization.slug)}>
+              <Button>Ir al panel de control</Button>
+            </Link>
+          ) : null}
           <Link href={tenantPath(DEFAULT_TENANT_SLUG, '/events')}>
             <Button variant="outline">Ver experiencias públicas</Button>
           </Link>
-          <Button variant="ghost" onClick={signOut}>
+          <Button variant="ghost" onClick={() => void signOut()}>
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar sesión
           </Button>

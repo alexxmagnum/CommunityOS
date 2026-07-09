@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Users, Plus, Loader2, Mail } from 'lucide-react'
-import { labelMemberStatus } from '@/lib/i18n/es'
+import { labelMemberStatus, labelRole, translateEmailProviderError } from '@/lib/i18n/es'
 import { toast } from 'sonner'
 
 interface Member {
@@ -63,17 +63,53 @@ export default function MembersPage() {
     if (!inviteEmail || !activeOrganization) return
     setInviting(true)
 
-    const { data: profile } = await supabase.from('profiles').select('user_id').eq('user_id',
-      (await supabase.from('profiles').select('user_id').limit(1)).data?.[0]?.user_id || 'none'
-    ).maybeSingle()
+    const orgId = activeOrganization.organization_id
+    const roleId = inviteRoleId || roles.find((r) => r.name === 'org_member')?.id
 
-    // Find user by email via auth - not directly queryable; invite by profile lookup won't work without admin API
-    // Instead: create pending membership if we find profile linked to email in metadata - use RPC or manual user_id
-    const { data: users } = await supabase.from('profiles').select('user_id, full_name')
+    try {
+      const response = await fetch('/api/invitations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: orgId,
+          email: inviteEmail.trim().toLowerCase(),
+          roleId: roleId || undefined,
+        }),
+      })
 
-    toast.info('Para invitar: el usuario debe registrarse primero. Asigna rol manualmente por user_id en Supabase, o implementa invitación por email.')
+      const payload = (await response.json()) as {
+        error?: string
+        inviteLink?: string
+        emailSent?: boolean
+        emailError?: string | null
+      }
+
+      if (!response.ok) {
+        toast.error(payload.error || 'No se pudo crear la invitación')
+        setInviting(false)
+        return
+      }
+
+      if (payload.inviteLink) {
+        await navigator.clipboard.writeText(payload.inviteLink).catch(() => null)
+      }
+
+      if (payload.emailSent) {
+        toast.success('Invitación enviada por correo')
+      } else if (payload.emailError) {
+        const friendly = translateEmailProviderError(payload.emailError)
+        toast.warning(`Invitación creada, pero el correo falló: ${friendly ?? payload.emailError}. Enlace copiado.`)
+      } else {
+        toast.success('Invitación creada — enlace copiado (configura Resend para enviar correos)')
+      }
+
+      setInviteOpen(false)
+      setInviteEmail('')
+    } catch {
+      toast.error('Error de red al enviar la invitación')
+    }
+
     setInviting(false)
-    setInviteOpen(false)
   }
 
   async function updateMemberRole(memberId: string, roleId: string) {
@@ -106,13 +142,27 @@ export default function MembersPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Invitar miembro</DialogTitle></DialogHeader>
-              <p className="text-sm text-muted-foreground">El usuario debe tener cuenta. Tras registrarse, asígnale rol aquí o desde Supabase.</p>
+              <p className="text-sm text-muted-foreground">
+                Se enviará un correo al invitado con el enlace. Si el correo no está configurado, copiamos el enlace al portapapeles.
+              </p>
               <div className="space-y-2">
-                <Label>Correo (referencia)</Label>
-                <Input placeholder="usuario@email.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+                <Label>Correo del invitado</Label>
+                <Input placeholder="usuario@email.com" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Rol</Label>
+                <Select value={inviteRoleId || roles.find((r) => r.name === 'org_member')?.id} onValueChange={setInviteRoleId}>
+                  <SelectTrigger><SelectValue placeholder="Rol" /></SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => <SelectItem key={r.id} value={r.id}>{labelRole(r.name, r.display_name)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <DialogFooter>
-                <Button onClick={handleInvite} disabled={inviting}>Entendido</Button>
+                <Button onClick={handleInvite} disabled={inviting || !inviteEmail}>
+                  {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Enviar invitación
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -142,11 +192,11 @@ export default function MembersPage() {
                       <Select value={m.role?.name ? roles.find(r => r.name === m.role?.name)?.id || '' : ''} onValueChange={(v) => updateMemberRole(m.id, v)}>
                         <SelectTrigger className="w-36 h-8"><SelectValue placeholder="Rol" /></SelectTrigger>
                         <SelectContent>
-                          {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.display_name || r.name}</SelectItem>)}
+                          {roles.map(r => <SelectItem key={r.id} value={r.id}>{labelRole(r.name, r.display_name)}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge variant="outline">{m.role?.display_name || m.role?.name || '—'}</Badge>
+                      <Badge variant="outline">{labelRole(m.role?.name, m.role?.display_name)}</Badge>
                     )}
                   </td>
                   <td className="p-4">

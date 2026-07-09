@@ -759,6 +759,7 @@ export interface Database {
           registered_at: string
           confirmed_at: string | null
           checked_in_at: string | null
+          check_in_token: string | null
           notes: string | null
           metadata: Json
         }
@@ -771,6 +772,7 @@ export interface Database {
           registered_at?: string
           confirmed_at?: string | null
           checked_in_at?: string | null
+          check_in_token?: string | null
           notes?: string | null
           metadata?: Json
         }
@@ -783,6 +785,7 @@ export interface Database {
           registered_at?: string
           confirmed_at?: string | null
           checked_in_at?: string | null
+          check_in_token?: string | null
           notes?: string | null
           metadata?: Json
         }
@@ -1252,6 +1255,82 @@ export interface Database {
           created_at?: string
         }
       }
+      notifications: {
+        Row: {
+          id: string
+          organization_id: string | null
+          user_id: string
+          type: string
+          title: string
+          body: string | null
+          link: string | null
+          payload: Json
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          user_id: string
+          type: string
+          title: string
+          body?: string | null
+          link?: string | null
+          payload?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          user_id?: string
+          type?: string
+          title?: string
+          body?: string | null
+          link?: string | null
+          payload?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+      }
+      organization_invitations: {
+        Row: {
+          id: string
+          organization_id: string
+          email: string
+          role_id: string | null
+          token: string
+          status: 'pending' | 'accepted' | 'expired' | 'revoked'
+          invited_by: string | null
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          email: string
+          role_id?: string | null
+          token?: string
+          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
+          invited_by?: string | null
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          email?: string
+          role_id?: string | null
+          token?: string
+          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
+          invited_by?: string | null
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -1259,6 +1338,7 @@ export interface Database {
     Functions: {
       update_updated_at_column: () => void
       generate_reservation_code: () => string
+      get_invitation_public: { Args: { p_token: string }; Returns: Json }
     }
     Enums: {
       // Enums are derived from text check constraints

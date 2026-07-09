@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocale, useLabels } from '@/contexts/LocaleContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +17,7 @@ import {
   ArrowUpRight,
   Activity
 } from 'lucide-react'
+import { localizeActivity, localizeEvent } from '@/lib/i18n/content'
 
 interface DashboardStats {
   todayEvents: number
@@ -30,6 +32,8 @@ interface DashboardStats {
 
 export default function OrgDashboard() {
   const { activeOrganization } = useAuth()
+  const { locale } = useLocale()
+  const { labelEventType, labelActivityType } = useLabels()
   const [stats, setStats] = useState<DashboardStats>({
     todayEvents: 0,
     upcomingEvents: 0,
@@ -120,8 +124,8 @@ export default function OrgDashboard() {
           activeMembers: activeMembers || 0,
           todayReservations: todayReservations || 0,
           activeTournaments: activeTournaments || 0,
-          recentActivities: recentActivities || [],
-          todaySchedule: todaySchedule || [],
+          recentActivities: (recentActivities || []).map((a) => localizeActivity(locale, a)),
+          todaySchedule: (todaySchedule || []).map((e) => localizeEvent(locale, e)),
         })
       } catch (error) {
         console.error('Error loading dashboard:', error)
@@ -131,7 +135,7 @@ export default function OrgDashboard() {
     }
 
     loadDashboard()
-  }, [activeOrganization])
+  }, [activeOrganization, locale])
 
   if (loading) {
     return (
@@ -228,7 +232,7 @@ export default function OrgDashboard() {
                     </div>
                     <div className="flex-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="capitalize">{eventTypeLabel(event.type)}</Badge>
+                        <Badge variant="outline" className="capitalize">{labelEventType(event.type)}</Badge>
                         <span className="font-medium">{event.title}</span>
                       </div>
                     </div>
@@ -263,7 +267,7 @@ export default function OrgDashboard() {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{activity.title}</p>
                       <p className="text-xs text-slate-500">
-                        {activity.description || activity.activity_type}
+                        {activity.description || labelActivityType(activity.activity_type)}
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
                         {new Date(activity.created_at).toLocaleDateString('es-ES')}
@@ -320,16 +324,4 @@ function getTimeOfDay() {
   if (hour < 12) return 'Buenos días'
   if (hour < 18) return 'Buenas tardes'
   return 'Buenas noches'
-}
-
-function eventTypeLabel(type: string) {
-  const labels: Record<string, string> = {
-    event: 'Evento',
-    tournament: 'Torneo',
-    workshop: 'Taller',
-    social: 'Social',
-    competition: 'Competición',
-    experience: 'Experiencia',
-  }
-  return labels[type] || type
 }

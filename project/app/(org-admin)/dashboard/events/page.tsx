@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocale, useLabels } from '@/contexts/LocaleContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,7 +40,8 @@ import {
   Trash2,
   Eye,
   Loader2,
-  CalendarDays
+  CalendarDays,
+  ScanLine,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -48,6 +51,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { localizeEvent } from '@/lib/i18n/content'
+import { tenantDashboardPath } from '@/lib/org/tenant-path'
 import { toast } from 'sonner'
 
 interface Event {
@@ -68,6 +73,8 @@ interface Event {
 
 export default function EventsPage() {
   const { activeOrganization, isOrgAdmin } = useAuth()
+  const { locale } = useLocale()
+  const { EVENT_TYPE_LABELS, EVENT_STATUS_LABELS } = useLabels()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -101,7 +108,7 @@ export default function EventsPage() {
         .order('starts_at', { ascending: false })
 
       if (error) throw error
-      setEvents(data || [])
+      setEvents((data || []).map((e) => localizeEvent(locale, e)))
     } catch (error) {
       console.error('Error loading events:', error)
       toast.error('No se pudieron cargar los eventos')
@@ -112,7 +119,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     loadEvents()
-  }, [activeOrganization])
+  }, [activeOrganization, locale])
 
   async function handleCreateEvent() {
     if (!newEvent.title || !newEvent.starts_at_date || !newEvent.starts_at_time) {
@@ -225,21 +232,9 @@ export default function EventsPage() {
     })
   }
 
-  const eventTypeLabels: Record<Event['type'], string> = {
-    event: 'Evento',
-    tournament: 'Torneo',
-    workshop: 'Taller',
-    social: 'Social',
-    competition: 'Competición',
-    experience: 'Experiencia',
-  }
+  const eventTypeLabels = EVENT_TYPE_LABELS as Record<Event['type'], string>
 
-  const eventStatusLabels: Record<Event['status'], string> = {
-    draft: 'Borrador',
-    published: 'Publicado',
-    cancelled: 'Cancelado',
-    completed: 'Finalizado',
-  }
+  const eventStatusLabels = EVENT_STATUS_LABELS as Record<Event['status'], string>
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -271,7 +266,16 @@ export default function EventsPage() {
           <p className="text-slate-500 mt-1">Crea y gestiona eventos, talleres y experiencias</p>
         </div>
         {isOrgAdmin() && (
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <div className="flex items-center gap-2">
+            {activeOrganization?.organization?.slug && (
+              <Button variant="outline" asChild>
+                <Link href={tenantDashboardPath(activeOrganization.organization.slug, 'events/check-in')}>
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Acreditación
+                </Link>
+              </Button>
+            )}
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -318,7 +322,7 @@ export default function EventsPage() {
                         <SelectItem value="event">Evento</SelectItem>
                         <SelectItem value="experience">Experiencia</SelectItem>
                         <SelectItem value="workshop">Taller</SelectItem>
-                        <SelectItem value="social">Social</SelectItem>
+                        <SelectItem value="social">Encuentro social</SelectItem>
                         <SelectItem value="competition">Competición</SelectItem>
                       </SelectContent>
                     </Select>
@@ -395,6 +399,7 @@ export default function EventsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
@@ -421,7 +426,7 @@ export default function EventsPage() {
             <SelectItem value="event">Eventos</SelectItem>
             <SelectItem value="experience">Experiencias</SelectItem>
             <SelectItem value="workshop">Talleres</SelectItem>
-            <SelectItem value="social">Sociales</SelectItem>
+            <SelectItem value="social">Encuentros sociales</SelectItem>
           </SelectContent>
         </Select>
       </div>

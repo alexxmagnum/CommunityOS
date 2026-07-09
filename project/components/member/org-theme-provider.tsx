@@ -1,28 +1,48 @@
 'use client'
 
+import { useEffect } from 'react'
 import type { TenantOrg } from '@/lib/org/types'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { resolveTenantTheme } from '@/lib/org/resolve-theme'
+import { cn } from '@/lib/utils'
+
+const GOOGLE_FONTS = new Set([
+  'Inter',
+  'Roboto',
+  'Lato',
+  'Open Sans',
+  'Poppins',
+  'Playfair Display',
+  'Instrument Serif',
+])
+
+function useTenantFont(fontFamily?: string) {
+  useEffect(() => {
+    if (!fontFamily || !GOOGLE_FONTS.has(fontFamily)) return
+    const id = `tenant-font-${fontFamily.replace(/\s+/g, '-')}`
+    if (document.getElementById(id)) return
+
+    const link = document.createElement('link')
+    link.id = id
+    link.rel = 'stylesheet'
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@400;500;600;700&display=swap`
+    document.head.appendChild(link)
+  }, [fontFamily])
+}
 
 export function OrgThemeProvider({ org, children }: { org: TenantOrg; children: React.ReactNode }) {
-  const isIkon = org.slug === 'ikon'
+  useTenantFont(org.font_family)
 
-  const style = {
-    '--org-ink': isIkon ? IKON_BRAND.ink : org.primary_color,
-    '--org-primary': isIkon ? IKON_BRAND.primary : org.primary_color,
-    '--org-secondary': isIkon ? IKON_BRAND.secondary : (org.secondary_color || org.primary_color),
-    '--org-accent': isIkon ? IKON_BRAND.accent : org.accent_color,
-    '--org-accent-cyan': isIkon ? IKON_BRAND.accentCyan : org.accent_color,
-    '--org-accent-lime': isIkon ? IKON_BRAND.accentLime : org.accent_color,
-    '--motanos-gradient': isIkon ? IKON_BRAND.gradient : `linear-gradient(90deg, ${org.accent_color}, ${org.accent_color})`,
-    '--org-surface': isIkon ? IKON_BRAND.surface : undefined,
-    '--btn-fill': isIkon ? IKON_BRAND.ink : 'hsl(var(--background))',
-  } as React.CSSProperties
+  const { style, isDark } = resolveTenantTheme(org)
 
   return (
     <div
       style={style}
-      className="tenant-theme min-h-screen bg-[var(--org-surface,hsl(var(--background))] text-[hsl(var(--foreground))]"
+      className={cn(
+        'tenant-theme min-h-screen font-sans bg-[hsl(var(--background))] text-[hsl(var(--foreground))]',
+        isDark && 'dark'
+      )}
       data-tenant={org.slug}
+      data-theme={org.theme_mode ?? 'light'}
     >
       {children}
     </div>

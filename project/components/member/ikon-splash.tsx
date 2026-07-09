@@ -1,14 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { getGolfSplashCopy } from '@/lib/org/tenant-experience'
+import type { TenantOrg } from '@/lib/org/types'
 import { bindGolfHitAudio, playGolfHitSound, unlockSplashAudio } from '@/lib/splash/golf-hit-sound'
+import { forceUnlockBodyScroll, lockBodyScroll, unlockBodyScroll } from '@/lib/dom/body-scroll-lock'
 import { cn } from '@/lib/utils'
 import { GolfGrassBurst } from '@/components/member/golf-grass-burst'
 
-const LETTERS = ['I', 'K', 'O', 'N'] as const
-const LINE2 = IKON_BRAND.logoLine2.toUpperCase()
-const LINE3 = IKON_BRAND.logoLine3.toUpperCase()
 const TYPE_MS = 48
 const SPREAD_MS = 900
 const STAGGER_MS = 90
@@ -19,6 +18,12 @@ const GOLF_BALL_MOBILE = '/splash/golf-ball-mobile.jpg?v=2'
 const GOLF_IMPACT_IMAGE = '/splash/golf-ball-impact.png'
 const GOLF_IMPACT_MOBILE = '/splash/golf-ball-impact-mobile.jpg?v=2'
 const MOBILE_MEDIA = '(max-width: 768px), (max-aspect-ratio: 3/4)'
+const MAX_SPLASH_MS = 9000
+
+function shouldSkipSplash() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 function SpreadReveal({
   text,
@@ -32,7 +37,7 @@ function SpreadReveal({
   active: boolean
 }) {
   return (
-    <p className={cn('flex w-full justify-between uppercase leading-none', className)}>
+    <p className={cn('ikon-splash-sub-line w-full uppercase leading-none', className)}>
       {text.split('').map((char, index) => (
         <span
           key={`${char}-${index}`}
@@ -72,7 +77,8 @@ function preloadImages(sources: string[]) {
   )
 }
 
-export function IkonSplash() {
+export function GolfSplash({ org }: { org: TenantOrg }) {
+  const { letters: LETTERS, line2: LINE2, line3: LINE3 } = getGolfSplashCopy(org)
   const blockRef = useRef<HTMLDivElement>(null)
   const wordRef = useRef<HTMLDivElement>(null)
   const letterRefs = useRef<(HTMLSpanElement | null)[]>([])
@@ -81,7 +87,7 @@ export function IkonSplash() {
   const [phase, setPhase] = useState<Phase>('measure')
   const [line2Count, setLine2Count] = useState(0)
   const [line3Count, setLine3Count] = useState(0)
-  const [mounted, setMounted] = useState(true)
+  const [mounted, setMounted] = useState(() => !shouldSkipSplash())
   const [scale, setScale] = useState(1)
   const [imagesReady, setImagesReady] = useState(false)
 
@@ -164,12 +170,20 @@ export function IkonSplash() {
     }
   }, [fitToViewport])
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
+  const finish = useCallback(() => {
+    forceUnlockBodyScroll()
+    setMounted(false)
   }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    lockBodyScroll()
+    const maxTimer = window.setTimeout(() => finish(), MAX_SPLASH_MS)
+    return () => {
+      window.clearTimeout(maxTimer)
+      unlockBodyScroll()
+    }
+  }, [mounted, finish])
 
   useEffect(() => {
     fitToViewport()
@@ -224,9 +238,11 @@ export function IkonSplash() {
     return () => window.clearTimeout(timer)
   }, [phase])
 
-  const finish = useCallback(() => {
-    setMounted(false)
-  }, [])
+  useEffect(() => {
+    if (phase !== 'exit') return
+    const timer = window.setTimeout(() => finish(), 720)
+    return () => window.clearTimeout(timer)
+  }, [phase, finish])
 
   if (!mounted) return null
 
@@ -242,13 +258,26 @@ export function IkonSplash() {
         phase === 'exit' && 'ikon-splash--exit',
       )}
       aria-hidden={phase === 'exit'}
-      onPointerDown={() => unlockSplashAudio()}
+      onPointerDown={() => {
+        unlockSplashAudio()
+        if (phase === 'hold' || phase === 'golf' || phase === 'line3') finish()
+      }}
       onAnimationEnd={(event) => {
         if (phase === 'exit' && event.animationName === 'ikon-splash-fade-out') {
           finish()
         }
       }}
     >
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          finish()
+        }}
+        className="absolute bottom-8 right-8 z-20 rounded-full border border-white/25 px-4 py-2 text-xs font-medium uppercase tracking-wider text-white/70 transition-colors hover:border-white/50 hover:text-white"
+      >
+        Saltar
+      </button>
       <audio
         ref={bindGolfHitAudio}
         src="/sounds/golf-hit.mp3"
@@ -310,7 +339,7 @@ export function IkonSplash() {
         >
           <div
             ref={blockRef}
-            className="ikon-splash-logo flex flex-col items-center text-white"
+            className="ikon-splash-logo flex flex-col items-stretch text-white"
             style={{
               width: `${LOGO_BLOCK_WIDTH}rem`,
               transform: `scale(${scale})`,
@@ -343,22 +372,29 @@ export function IkonSplash() {
               ))}
             </div>
 
-            <SpreadReveal
-              text={LINE2}
-              revealCount={line2Count}
-              active={line2Active}
-              className="ikon-splash-sub mt-[0.55rem] text-[10px] leading-none"
-            />
+            <div className="ikon-splash-sub-track w-full">
+              <SpreadReveal
+                text={LINE2}
+                revealCount={line2Count}
+                active={line2Active}
+                className="mt-[0.55rem] text-[10px] leading-none"
+              />
 
-            <SpreadReveal
-              text={LINE3}
-              revealCount={line3Count}
-              active={line3Active}
-              className="ikon-splash-sub mt-[0.35rem] text-[10px] leading-none"
-            />
+              <SpreadReveal
+                text={LINE3}
+                revealCount={line3Count}
+                active={line3Active}
+                className="mt-[0.35rem] text-[10px] leading-none"
+              />
+            </div>
           </div>
         </div>
       )}
     </div>
   )
+}
+
+/** @deprecated Usa GolfSplash */
+export function IkonSplash({ org }: { org: TenantOrg }) {
+  return <GolfSplash org={org} />
 }

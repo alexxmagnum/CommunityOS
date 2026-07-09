@@ -99,7 +99,7 @@ export default function SignupPage() {
           </Link>
 
           <h1 className="text-2xl font-semibold text-[#0c0f14]">Crear cuenta</h1>
-          <p className="mt-2 text-sm text-[#0c0f14]/55">Gratis. Tu admin te vinculará a la organización.</p>
+          <p className="mt-2 text-sm text-[#0c0f14]/55">Gratis. Un administrador te vinculará a la organización.</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {error && (

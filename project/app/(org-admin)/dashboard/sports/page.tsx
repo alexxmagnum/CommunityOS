@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocale } from '@/contexts/LocaleContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +33,6 @@ import {
   Search,
   MapPin,
   Clock,
-  DollarSign,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -48,6 +48,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
+import { SportRulesPanel } from '@/components/admin/sport-rules-panel'
+import { formatMoney } from '@/lib/i18n/format-currency'
+import { localizeFacility } from '@/lib/i18n/content'
+import { useLabels } from '@/contexts/LocaleContext'
 
 interface Sport {
   id: string
@@ -69,6 +73,8 @@ interface Facility {
 
 export default function SportsPage() {
   const { activeOrganization, isOrgAdmin } = useAuth()
+  const { locale } = useLocale()
+  const { labelSportName } = useLabels()
   const [sports, setSports] = useState<Sport[]>([])
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,7 +114,7 @@ export default function SportsPage() {
         .eq('organization_id', activeOrganization.organization_id)
         .order('name')
 
-      setFacilities(facilitiesData || [])
+      setFacilities((facilitiesData || []).map((f) => localizeFacility(locale, f)))
     } catch (error) {
       console.error('Error loading data:', error)
       toast.error('No se pudieron cargar los datos deportivos')
@@ -119,7 +125,7 @@ export default function SportsPage() {
 
   useEffect(() => {
     loadData()
-  }, [activeOrganization])
+  }, [activeOrganization, locale])
 
   async function handleCreateFacility() {
     if (!newFacility.name) {
@@ -257,7 +263,7 @@ export default function SportsPage() {
                     <SelectContent>
                       {sports.map(sport => (
                         <SelectItem key={sport.id} value={sport.id}>
-                          {sport.display_name || sport.name}
+                          {labelSportName(sport.name, sport.display_name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -350,7 +356,7 @@ export default function SportsPage() {
             <TabsTrigger value="all">Todas</TabsTrigger>
             {sports.slice(0, 4).map(sport => (
               <TabsTrigger key={sport.id} value={sport.id}>
-                {sport.display_name || sport.name}
+                {labelSportName(sport.name, sport.display_name)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -370,7 +376,7 @@ export default function SportsPage() {
                   <div>
                     <CardTitle className="text-lg">{facility.name}</CardTitle>
                     <CardDescription>
-                      {facility.sport?.display_name || facility.sport?.name || 'General'}
+                      {labelSportName(facility.sport?.name, facility.sport?.display_name)}
                     </CardDescription>
                   </div>
                 </div>
@@ -389,8 +395,9 @@ export default function SportsPage() {
                   <span>{facility.booking_config?.duration_minutes || 60} min</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span>{facility.booking_config?.price_per_hour?.toFixed(2) || '0.00'}/h</span>
+                  <span>
+                    {formatMoney(facility.booking_config?.price_per_hour ?? 0, { locale })}/h
+                  </span>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-2">
@@ -430,6 +437,8 @@ export default function SportsPage() {
           </div>
         )}
       </div>
+
+      <SportRulesPanel />
     </div>
   )
 }

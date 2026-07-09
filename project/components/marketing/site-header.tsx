@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useTenantOptional } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { DEFAULT_TENANT_SLUG, tenantPath } from '@/lib/org/tenant-path'
+import { DEFAULT_TENANT_SLUG, tenantPath, tenantDashboardPath } from '@/lib/org/tenant-path'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard, LogOut } from 'lucide-react'
 
@@ -14,10 +14,10 @@ export function SiteHeader() {
 
   const { user, loading, signOut, isPlatformAdmin, isOrgAdmin, activeOrganization } = useAuth()
 
-  const panelHref = isPlatformAdmin()
-    ? '/platform-admin'
-    : activeOrganization && isOrgAdmin()
-      ? '/dashboard'
+  const panelHref = activeOrganization && isOrgAdmin() && activeOrganization.organization?.slug
+    ? tenantDashboardPath(activeOrganization.organization.slug)
+    : isPlatformAdmin()
+      ? '/platform-admin'
       : '/onboarding'
 
   return (
@@ -47,7 +47,7 @@ export function SiteHeader() {
                   </Button>
                 </Link>
               )}
-              <Button size="sm" variant="ghost" onClick={signOut}>
+              <Button size="sm" variant="ghost" onClick={() => void signOut()}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </>

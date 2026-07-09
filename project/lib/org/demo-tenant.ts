@@ -1,18 +1,41 @@
 import type { TenantActivity, TenantEvent, TenantFacility, TenantOrg } from './types'
 import { IKON_BRAND } from './ikon-brand'
 
-/** Primer tenant demo — IKON Golf Club premium */
+export const DEMO_HERO = 'https://images.unsplash.com/photo-1535131749006-ba7a34837537?auto=format&fit=crop&w=2400&q=90'
+
+/** Primer tenant demo — IKON Golf Club (preset opcional, no lógica especial en la app) */
 export const DEMO_TENANT: TenantOrg = {
   id: 'demo-ikon',
   name: 'IKON',
   slug: 'ikon',
-  logo_url: null,
-  primary_color: IKON_BRAND.primary,
-  secondary_color: IKON_BRAND.secondary,
+  logo_url: '/brand/ikon-logo.png',
+  primary_color: IKON_BRAND.ink,
+  secondary_color: IKON_BRAND.ink,
   accent_color: IKON_BRAND.accent,
   font_family: 'Instrument Serif',
-  theme_mode: 'light',
+  theme_mode: 'dark',
   city: 'Marbella',
+  hero_image_url: DEMO_HERO,
+  hero_tagline: IKON_BRAND.heroSubtitle,
+  locale: 'es-ES',
+  currency: 'EUR',
+  custom_domain: 'ikon.localhost',
+  branding: {
+    hero_style: 'cinematic',
+    splash_style: 'golf',
+    hero_image_url: DEMO_HERO,
+    hero_tagline: IKON_BRAND.heroSubtitle,
+    tagline: IKON_BRAND.tagline,
+    hero_eyebrow_kicker: IKON_BRAND.heroEyebrowKicker,
+    hero_eyebrow: IKON_BRAND.heroEyebrow,
+    hero_title_lines: [
+      IKON_BRAND.heroTitleLine1,
+      IKON_BRAND.heroTitleLine2,
+      IKON_BRAND.heroTitleLine3,
+      IKON_BRAND.heroTitleLine4,
+    ],
+    hero_title_mobile: 'Un estilo de vida. Una pasión eterna.',
+  },
 }
 
 export const DEMO_EVENTS: TenantEvent[] = [
@@ -65,9 +88,7 @@ export const DEMO_FACILITIES: TenantFacility[] = [
 ]
 
 export const DEMO_ACTIVITIES: TenantActivity[] = [
-  { id: 'demo-a0', title: 'Carlos reservó tee time', description: 'Campo · sábado 09:00 · flight de 4', created_at: new Date(Date.now() - 900000).toISOString() },
+  { id: 'demo-a0', title: 'Carlos reservó una salida', description: 'Campo · sábado 09:00 · grupo de 4', created_at: new Date(Date.now() - 900000).toISOString() },
   { id: 'demo-a1', title: 'María se inscribió al torneo de socios', description: 'Formato medal play · 18 hoyos', created_at: new Date(Date.now() - 3600000).toISOString() },
   { id: 'demo-a2', title: 'Mesa reservada en terraza', description: 'Cata de vinos · 2 comensales', created_at: new Date(Date.now() - 7200000).toISOString() },
 ]
-
-export const DEMO_HERO = 'https://images.unsplash.com/photo-1535131749006-ba7a34837537?auto=format&fit=crop&w=2400&q=90'

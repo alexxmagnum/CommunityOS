@@ -5,14 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ExternalLink, Database, RefreshCw } from 'lucide-react'
 
-const SUPABASE_SQL_URL = 'https://supabase.com/dashboard/project/ptsvwkguzesvsdndzoby/sql/new'
-
 const STEPS = [
-  'Abre el SQL Editor de tu proyecto Supabase.',
-  'Copia el contenido de supabase/APPLY_REMAINING.sql (RLS + datos IKON).',
-  'Pégalo en el editor y pulsa Run.',
-  'Recarga localhost:3000 — deberías ver la homepage de IKON.',
+  'Confirma .env con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY (Settings → API).',
+  'Si la base está vacía (sin tablas): ejecuta supabase/APPLY_ALL.sql en el SQL Editor.',
+  'Luego ejecuta supabase/APPLY_SEED_AND_PHASES.sql (seed IKON + migraciones fase 1–4).',
+  'Si ya tenías esquema pero sin datos: solo APPLY_SEED_AND_PHASES.sql.',
+  'Reinicia npm run dev y abre /o/ikon — ya no debería salir el banner demo.',
 ]
+
+function supabaseSqlEditorUrl() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const ref = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+  return ref
+    ? `https://supabase.com/dashboard/project/${ref}/sql/new`
+    : 'https://supabase.com/dashboard'
+}
 
 export default function SetupPage() {
   return (
@@ -40,7 +47,20 @@ export default function SetupPage() {
         </Card>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <a href={SUPABASE_SQL_URL} target="_blank" rel="noopener noreferrer">
+          <Link href="/o/ikon">
+            <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 sm:w-auto">
+              Demo IKON
+            </Button>
+          </Link>
+          <Link href="/o/marina">
+            <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 sm:w-auto">
+              Demo Marina
+            </Button>
+          </Link>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <a href={supabaseSqlEditorUrl()} target="_blank" rel="noopener noreferrer">
             <Button className="w-full gap-2 bg-amber-500 text-black hover:bg-amber-400 sm:w-auto">
               <ExternalLink className="h-4 w-4" />
               Abrir SQL Editor
@@ -55,9 +75,9 @@ export default function SetupPage() {
         </div>
 
         <p className="text-center text-sm text-white/40">
-          Archivo local: <code className="text-amber-300/80">project/supabase/APPLY_REMAINING.sql</code>
+          <code className="text-amber-300/80">APPLY_ALL.sql</code> (esquema)
           {' · '}
-          Si la base está vacía, usa <code className="text-amber-300/80">APPLY_ALL.sql</code>
+          <code className="text-amber-300/80">APPLY_SEED_AND_PHASES.sql</code> (datos IKON + fases 1–4)
         </p>
       </div>
     </div>

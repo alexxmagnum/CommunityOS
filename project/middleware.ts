@@ -1,8 +1,26 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { rewritePathForCustomDomain } from '@/lib/org/resolve-host-tenant'
+import { resolveSlugFromHostWithDb } from '@/lib/org/resolve-domain-slug'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  if (request.nextUrl.pathname.startsWith('/a/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = url.pathname.replace(/^\/a\//, '/o/')
+    return NextResponse.redirect(url)
+  }
+
+  const slug = await resolveSlugFromHostWithDb(request.headers.get('host'))
+  if (slug) {
+    const rewritten = rewritePathForCustomDomain(request.nextUrl.pathname, slug)
+    if (rewritten) {
+      const url = request.nextUrl.clone()
+      url.pathname = rewritten
+      return updateSession(new NextRequest(url, request))
+    }
+  }
+
+  return updateSession(request)
 }
 
 export const config = {

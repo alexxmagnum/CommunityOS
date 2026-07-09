@@ -1,31 +1,53 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { generateDiscoveryPrompts } from '@/lib/discovery/generate-prompts'
-import { IKON_BRAND } from '@/lib/org/ikon-brand'
+import { generatePersonalizedPrompts } from '@/lib/discovery/generate-personalized-prompts'
+import { loadMemberProfile } from '@/lib/community/load-member-profile'
 import { labelEventType } from '@/lib/i18n/es'
 import { formatEventDate, formatRelativeTime } from '@/lib/format/dates'
 import { MemberHeader } from '@/components/member/member-header'
-import { IkonHero } from '@/components/member/ikon-hero'
+import { TenantCinematicHero } from '@/components/member/tenant-cinematic-hero'
+import { TenantHero } from '@/components/member/tenant-hero'
+import { TenantFooter } from '@/components/member/tenant-footer'
+import { usesCinematicHero } from '@/lib/org/tenant-experience'
 import { DiscoveryFeed } from '@/components/member/discovery-feed'
+import { EmptySection } from '@/components/member/empty-section'
+import { ForYouSection } from '@/components/member/for-you-section'
+import { isModuleEnabled } from '@/lib/org/tenant-modules'
 import { Calendar, Clock, Flag, MapPin, Users, UtensilsCrossed } from 'lucide-react'
-
-function todayLabel() {
-  return new Intl.DateTimeFormat('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date())
-}
 
 export function TenantHomePage() {
   const { org, events, facilities, activities, stats, demoMode, path } = useTenant()
-  const isIkon = org.slug === 'ikon'
+  const { user } = useAuth()
+  const cinematicHero = usesCinematicHero(org)
+  const showSports = isModuleEnabled(org.modules, 'sports')
+  const showRestaurant = isModuleEnabled(org.modules, 'restaurant')
+  const showEvents = isModuleEnabled(org.modules, 'events')
+  const [forYouPrompts, setForYouPrompts] = useState<ReturnType<typeof generateDiscoveryPrompts>>([])
+
   const prompts = generateDiscoveryPrompts(events, facilities, demoMode).map((p) => ({
     ...p,
     href: path(p.href),
   }))
+
+  useEffect(() => {
+    if (!user) {
+      setForYouPrompts([])
+      return
+    }
+    loadMemberProfile(org.id, user.id, demoMode).then((profile) => {
+      const personalized = generatePersonalizedPrompts(events, facilities, demoMode, {
+        favoriteSports: profile.preferences.favorite_sports,
+        favoriteDishes: profile.preferences.favorite_dishes,
+        recentEventTypes: profile.history.map((h) => h.type === 'tournament' ? 'tournament' : 'event'),
+      }).map((p) => ({ ...p, href: path(p.href) }))
+      setForYouPrompts(personalized)
+    })
+  }, [user, org.id, demoMode, events, facilities, path])
   const featured = events[0]
   const golfFacility = facilities.find((f) => f.sport?.name === 'golf')
 
@@ -34,34 +56,20 @@ export function TenantHomePage() {
       <div className="relative bg-ink">
         <MemberHeader variant="transparent" hideDemoBanner />
 
-        {isIkon ? (
-          <IkonHero
+        {cinematicHero ? (
+          <TenantCinematicHero
+            org={org}
             featured={featured}
             demoMode={demoMode}
             golfFacilityId={golfFacility?.id}
+            facilities={facilities}
             path={path}
           />
         ) : (
-          <section className="relative min-h-[72vh] overflow-hidden">
-            <div className="absolute inset-0 bg-neutral-900" />
-            <div className="scrim-hero absolute inset-0" />
-            <div className="relative mx-auto flex min-h-[72vh] max-w-7xl flex-col justify-center px-6 py-24 lg:px-10">
-              <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-white/50">{todayLabel()}</p>
-              <h1 className="font-display mt-4 max-w-[14ch] text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] text-white">
-                Bienvenido<br />a {org.name}
-              </h1>
-              <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 md:text-lg">
-                Experiencias, deporte y gastronomía en un club diseñado para disfrutar cada momento.
-              </p>
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Link href={path('/reservations')} className="btn-hero-cta-fill">Reservar</Link>
-                <Link href={path('/carta')} className="btn-hero-cta-outline">Ver carta</Link>
-              </div>
-            </div>
-          </section>
+          <TenantHero org={org} featured={featured} path={path} />
         )}
 
-        {demoMode && isIkon && (
+        {demoMode && org.slug === 'ikon' && (
           <Link
             href="/setup"
             className="absolute bottom-8 left-6 z-20 hidden rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] text-white/55 backdrop-blur-md hover:text-white/80 lg:inline-flex"
@@ -72,6 +80,7 @@ export function TenantHomePage() {
       </div>
 
       <main className="mx-auto max-w-7xl space-y-24 px-6 py-20 lg:px-10 lg:py-28">
+        {user && forYouPrompts.length > 0 && <ForYouSection prompts={forYouPrompts} />}
         <DiscoveryFeed prompts={prompts} />
 
         <section>
@@ -82,8 +91,9 @@ export function TenantHomePage() {
             </h2>
           </div>
 
+          {(showSports || showRestaurant) && (
           <div className="grid gap-5 lg:grid-cols-12">
-            {golfFacility && (
+            {showSports && golfFacility && (
               <Link
                 href={path(`/reservations?facility=${golfFacility.id}`)}
                 className="group relative min-h-[320px] overflow-hidden rounded-3xl lg:col-span-7"
@@ -107,6 +117,7 @@ export function TenantHomePage() {
               </Link>
             )}
 
+            {showRestaurant && (
             <div className="flex flex-col gap-5 lg:col-span-5">
               <Link href={path('/carta')} className="group relative flex-1 overflow-hidden rounded-3xl">
                 <img
@@ -130,9 +141,11 @@ export function TenantHomePage() {
                 <span className="text-sm font-medium text-motanos">→</span>
               </Link>
             </div>
+            )}
           </div>
+          )}
 
-          {facilities.filter((f) => f.sport?.name !== 'golf').length > 0 && (
+          {showSports && facilities.filter((f) => f.sport?.name !== 'golf').length > 0 && (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {facilities.filter((f) => f.sport?.name !== 'golf').map((f) => (
                 <Link
@@ -154,6 +167,7 @@ export function TenantHomePage() {
           )}
         </section>
 
+        {showEvents && (
         <section>
           <div className="mb-10 flex items-end justify-between gap-4">
             <div>
@@ -168,10 +182,17 @@ export function TenantHomePage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            {events.slice(0, 4).map((event) => (
+            {events.length === 0 ? (
+              <EmptySection
+                title="No hay experiencias publicadas"
+                description="Vuelve pronto o explora las reservas del club."
+                actionLabel="Ver reservas"
+                actionHref={path('/reservations')}
+              />
+            ) : events.slice(0, 4).map((event) => (
               <Link
                 key={event.id}
-                href={demoMode ? path('/events') : path(`/events/${event.id}`)}
+                href={demoMode || event.id.startsWith('demo-') ? path('/events') : path(`/events/${event.id}`)}
                 className="group overflow-hidden rounded-3xl bg-neutral-900 shadow-lg"
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
@@ -203,13 +224,18 @@ export function TenantHomePage() {
             ))}
           </div>
         </section>
+        )}
 
         <section className="grid gap-12 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <p className="label-caps">Comunidad</p>
             <h2 className="font-display mt-3 mb-8 text-4xl text-foreground">Actividad reciente</h2>
             <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-neutral-900">
-              {activities.map((a) => (
+              {activities.length === 0 ? (
+                <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+                  Aún no hay actividad en el club.
+                </div>
+              ) : activities.map((a) => (
                 <div key={a.id} className="px-6 py-5">
                   <p className="font-medium text-foreground">{a.title}</p>
                   {a.description && <p className="mt-1 text-sm text-muted-foreground">{a.description}</p>}
@@ -224,7 +250,7 @@ export function TenantHomePage() {
             <div className="mt-6 grid gap-4">
               {[
                 { icon: Calendar, value: stats.events, label: 'Experiencias activas' },
-                { icon: Users, value: stats.members || '240+', label: 'Socios activos' },
+                { icon: Users, value: stats.members > 0 ? stats.members : '—', label: 'Socios activos' },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} className="rounded-2xl bg-neutral-900 p-8 text-center">
                   <Icon className="mx-auto mb-4 h-5 w-5 text-accent-solid" />
@@ -237,25 +263,7 @@ export function TenantHomePage() {
         </section>
       </main>
 
-      <footer className="bg-black px-6 py-16 text-center">
-        {isIkon ? (
-          <img
-            src={`${IKON_BRAND.logoImage}?v=7`}
-            alt="IKON Sports & Lounge Sant Jordi"
-            className="mx-auto h-20 w-auto object-contain"
-            width={1024}
-            height={565}
-          />
-        ) : (
-          <p className="font-display text-4xl tracking-wide text-white">{org.name}</p>
-        )}
-        {!isIkon && (
-          <p className="mt-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-            {org.city || 'Private Club'}
-          </p>
-        )}
-        <p className="mt-8 text-xs text-white/35">© {new Date().getFullYear()} {org.name}</p>
-      </footer>
+      <TenantFooter />
     </>
   )
 }
